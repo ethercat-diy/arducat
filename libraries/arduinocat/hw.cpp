@@ -62,34 +62,20 @@
 --------------------------------------------------------------------------------------*/
 #include "ecat_def.h"
 
-#define    _EL9800HW_ 1
-#include "el9800hw.h"
-#undef    _EL9800HW_
-#define    _EL9800HW_ 0
 
 
 #include "ethercat.h"
-
-/** @} */
+#include <SPI.h>
 
 /*--------------------------------------------------------------------------------------
-------
-------    internal Types and Defines
-------
---------------------------------------------------------------------------------------*/
+--------------------Ethercat pin definitions--------------------------------------------
+SSEL = PH2
+SIRQ = PE6(INT6)
+SYNC = PE7(INT7)
 
-typedef union
-{
-    unsigned short    Word;
-    unsigned char    Byte[2];
-} UBYTETOWORD;
 
-typedef union 
-{
-    UINT8           Byte[2];
-    UINT16          Word;
-}
-UALEVENT;
+----------------------------------------------------------------------------------------*/
+
 
 /*-----------------------------------------------------------------------------------------
 ------
@@ -105,8 +91,8 @@ UALEVENT;
 //#define SPI1_STAT                        (LPC_SSP0->SR)//SPI1STAT
 //#define SPI1_CPSR						 (LPC_SSP0->CPSR)//added
 #define    WAIT_SPI_IF                        //spi.end();//while( SPI1_IF );//while( !SPI1_IF );
-#define    SELECT_SPI                      digitalWrite(15, LOW);//{(LPC_GPIO3->DATA) &= ~(SPI_ACTIVE);}
-#define    DESELECT_SPI                    digitalWrite(15, HIGH);//{(LPC_GPIO3->DATA) |= (SPI_DEACTIVE);}
+#define    SELECT_SPI                      PORTH &= ~(1<<2);//digitalWrite(15, LOW);//{(LPC_GPIO3->DATA) &= ~(SPI_ACTIVE);}
+#define    DESELECT_SPI                    PORTH |= (1<<2);//digitalWrite(15, HIGH);//{(LPC_GPIO3->DATA) |= (SPI_DEACTIVE);}
 #define    INIT_SSPIF                        //{(SPI1_IF)=0;}
 //#define SPI1_STAT_VALUE                    0x8000
 #define SPI1_CON0_VALUE                    	0x000000C7//0x027E
@@ -137,7 +123,7 @@ UALEVENT;
 ------
 -----------------------------------------------------------------------------------------*/
 
-#define	   INIT_ESC_INT		attachInterrupt(0,PIOINT3_IRQHandler,FALLING );//{(LPC_GPIO3->IS)|=(1<<5);(LPC_GPIO3->IEV)&=~(1<<5);NVIC_EnableIRQ(EINT3_IRQn);}
+#define	   INIT_ESC_INT		attachInterrupt(6,SIRQ_IRQHandler,FALLING );//{(LPC_GPIO3->IS)|=(1<<5);(LPC_GPIO3->IEV)&=~(1<<5);NVIC_EnableIRQ(EINT3_IRQn);}
 
 
 
@@ -148,8 +134,8 @@ UALEVENT;
 -----------------------------------------------------------------------------------------*/
 
 #define	   INIT_SYNC0_INT		//{(LPC_GPIO1->IE)|=(1<<9);(LPC_GPIO1->IS)|=(1<<9);(LPC_GPIO1->IEV)&=~(1<<9);NVIC_EnableIRQ(EINT1_IRQn);}
-#define    DISABLE_SYNC0_INT    detachInterrupt(0);//            {(LPC_GPIO1->IE)&=~(1<<9);}//disable interrupt source INT3
-#define    ENABLE_SYNC0_INT     attachInterrupt(0,PIOINT1_IRQHandler,FALLING );//           {(LPC_GPIO1->IE)|=(1<<9);} //enable interrupt source INT3
+#define    DISABLE_SYNC0_INT    detachInterrupt(7);//            {(LPC_GPIO1->IE)&=~(1<<9);}//disable interrupt source INT3
+#define    ENABLE_SYNC0_INT     attachInterrupt(7,SYNC_IRQHandler,FALLING );//           {(LPC_GPIO1->IE)|=(1<<9);} //enable interrupt source INT3
 
 /*-----------------------------------------------------------------------------------------
 ------
@@ -187,7 +173,8 @@ UALEVENT;
 ------    internal functions
 ------
 --------------------------------------------------------------------------------------*/
-
+void SIRQ_IRQHandler();
+void SYNC_IRQHandler();
 /////////////////////////////////////////////////////////////////////////////////////////
 /**
  \brief  The function operates a SPI access without addressing.
@@ -195,7 +182,7 @@ UALEVENT;
         The first two bytes of an access to the EtherCAT ASIC always deliver the AL_Event register (0x220).
         It will be saved in the global "EscALEvent"
 *////////////////////////////////////////////////////////////////////////////////////////
-static void Ethercat::GetInterruptRegister(void)
+void Ethercat::GetInterruptRegister(void)
 {
     UINT8            EscMbxReadEcatCtrl;
     DISABLE_AL_EVENT_INT;
@@ -208,7 +195,7 @@ static void Ethercat::GetInterruptRegister(void)
     /* there have to be at least 15 ns after the SPI1_SEL signal was active (0) before
        the transmission shall be started */
     /* write to SPI1_BUF register starts the SPI access*/
-	EscALEvent.Byte[0] = SPI.transfer((UINT8) (0x0000 >> 5)) 
+	EscALEvent.Byte[0] = SPI.transfer((UINT8) (0x0000 >> 5));
     //SPI1_BUF = (UINT8) (0x0000 >> 5);
 
     /* SPI is busy */
@@ -223,7 +210,7 @@ static void Ethercat::GetInterruptRegister(void)
 
     /* write to SPI1_BUF register starts the SPI access
        read the sm mailbox read ecatenable byte */
-	EscALEvent.Byte[1] = SPI.transfer((UINT8) (((0x0000 & 0x1F) << 3) | ESC_RD)) 
+	EscALEvent.Byte[1] = SPI.transfer((UINT8) (((0x0000 & 0x1F) << 3) | ESC_RD));
  
  //SPI1_BUF = (UINT8) (((0x0000 & 0x1F) << 3) | ESC_RD);
     /* write to SPI1_BUF register starts the SPI access */
@@ -265,7 +252,7 @@ static void Ethercat::GetInterruptRegister(void)
         The first two bytes of an access to the EtherCAT ASIC always deliver the AL_Event register (0x220).
         It will be saved in the global "EscALEvent"
 *////////////////////////////////////////////////////////////////////////////////////////
-static void Ethercat::ISR_GetInterruptRegister(void)
+void Ethercat::ISR_GetInterruptRegister(void)
 {
     /* SPI should be deactivated to interrupt a possible transmission */
     DESELECT_SPI;
@@ -316,7 +303,7 @@ static void Ethercat::ISR_GetInterruptRegister(void)
 
  \brief The function addresses the EtherCAT ASIC via SPI for a following SPI access.
 *////////////////////////////////////////////////////////////////////////////////////////
-static void Ethercat::AddressingEsc( UINT16 Address, UINT8 Command )
+void Ethercat::AddressingEsc( UINT16 Address, UINT8 Command )
 {
     UBYTETOWORD tmp;
     VARVOLATILE UINT8 dummy;
@@ -342,7 +329,7 @@ static void Ethercat::AddressingEsc( UINT16 Address, UINT8 Command )
 //    SPI1_IF=0;
     //?dummy = SPI1_BUF;
     /* send the second address/command byte to the ESC */
-    EscALEvent.Byte[1] = SPI.transfer(tmp.Byte[0]);    
+    EscALEvent.Byte[1] = SPI.transfer(tmp.Byte[0]); 
 
 	//SPI1_BUF = tmp.Byte[0];
     /* wait until the transmission of the byte is finished */
@@ -366,7 +353,7 @@ static void Ethercat::AddressingEsc( UINT16 Address, UINT8 Command )
  \brief The function addresses the EtherCAT ASIC via SPI for a following SPI access.
         Shall be implemented if interrupts are supported else this function is equal to "AddressingEsc()"
 *////////////////////////////////////////////////////////////////////////////////////////
-static void Ethercat::ISR_AddressingEsc( UINT16 Address, UINT8 Command )
+void Ethercat::ISR_AddressingEsc( UINT16 Address, UINT8 Command )
 {
     VARVOLATILE UINT8 dummy;
     UBYTETOWORD tmp;
@@ -381,7 +368,7 @@ static void Ethercat::ISR_AddressingEsc( UINT16 Address, UINT8 Command )
     /* there have to be at least 15 ns after the SPI1_SEL signal was active (0) before
        the transmission shall be started */
     /* send the first address/command byte to the ESC */
-    dummy = SPI.transfer(tmp.Byte[1]);  
+    dummy = SPI.transfer(tmp.Byte[1]); 
 	//SPI1_BUF = tmp.Byte[1];
     /* wait until the transmission of the byte is finished */
     //WAIT_SPI_IF
@@ -435,7 +422,7 @@ UINT8 Ethercat::HW_Init(void)
 	//LPC_IOCON->PIO0_8 = 0x01;	//MISO0
 	//LPC_IOCON->PIO0_6 = 0x02;	//SCK0
 	//LPC_IOCON->SCK_LOC = 0x02;	//SCK@P0.6
-	LPC_GPIO3->DIR |= 1<<4;
+	//*****LPC_GPIO3->DIR |= 1<<4;
 
       /* initialize the SPI registers for the ESC SPI */
 	SPI.setClockDivider(2);
@@ -446,7 +433,10 @@ UINT8 Ethercat::HW_Init(void)
 	SPI.setDataMode(SPI_MODE3);	//CPOL=CPHA=1
 	//SPI1_CON0 = SPI1_CON0_VALUE;
     //SPI1_CON1 = SPI1_CON1_VALUE;
-
+	//Initial SSEL pin 
+	PORTH |= (1<<2);
+	DDRH |= (1<<2);
+	
     //PORT_CFG;
 /*	LPC_IOCON->R_PIO1_0 = (1<<7)|0x01;	//Dig|GPIO
 	LPC_IOCON->R_PIO1_1 = (1<<7)|0x01;	//Dig|GPIO
@@ -645,6 +635,9 @@ void Ethercat::HW_EscRead( MEM_ADDR *pData, UINT16 Address, UINT16 Len )
         Address++;
         /* reset transmission flag */
 //        SPI1_IF = 0;
+
+
+
     }
 }
 
@@ -786,7 +779,7 @@ void Ethercat::HW_EscWriteIsr( MEM_ADDR *pData, UINT16 Address, UINT16 Len )
 
  \brief    This function disables a Sync Manager channel
 *////////////////////////////////////////////////////////////////////////////////////////
-void Ethercat::W_DisableSyncManChannel(UINT8 channel)
+void Ethercat::HW_DisableSyncManChannel(UINT8 channel)
 {
     UINT16 Offset;
     //The register 0x806 is only readable from PDI => writing 0 is valid
@@ -849,15 +842,15 @@ TSYNCMAN ESCMEM * Ethercat::HW_GetSyncMan(UINT8 channel)
 *////////////////////////////////////////////////////////////////////////////////////////
 
 //void __attribute__ ((__interrupt__, no_auto_psv)) EscIsr & SYNC0(void)
-void PIOINT3_IRQHandler()
+void SIRQ_IRQHandler()
 {
 		//LPC_GPIO3->IC = (1 << 5);     /* clear pending interrupt         */
-    	PDI_Isr();
+    	ethercat.PDI_Isr();
 }
-void PIOINT1_IRQHandler()
+void SYNC_IRQHandler()
 {
 		//LPC_GPIO1->IC = (1 << 9);     /* clear pending interrupt         */
-    	Sync0_Isr();
+    	ethercat.Sync0_Isr();
 }
 
 /*extern int mutexSample = 0;

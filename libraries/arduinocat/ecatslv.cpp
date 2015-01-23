@@ -141,7 +141,7 @@
 
 
 #include "ethercat.h"
-
+extern TOBJ10F1 sErrorSettings;
 /*--------------------------------------------------------------------------------------
 ------
 ------    local Types and Defines
@@ -777,7 +777,7 @@ void Ethercat::StopInputHandler(void)
 
   \brief  The function changes the state of the EtherCAT ASIC to the requested.
 *////////////////////////////////////////////////////////////////////////////////////////
-void Ethercat::etALStatus(UINT8 alStatus, UINT16 alStatusCode)
+void Ethercat::SetALStatus(UINT8 alStatus, UINT16 alStatusCode)
 {
     UINT16 Value = alStatusCode;
 
@@ -878,7 +878,6 @@ void Ethercat::AL_ControlInd(UINT8 alControl, UINT16 alStatusCode)
     stateTrans = nAlStatus;
     stateTrans <<= 4;
     stateTrans += alControl;
-
 
     /* check the SYNCM settings depending on the state transition */
     switch ( stateTrans )
@@ -1784,8 +1783,7 @@ void Ethercat::ECAT_Main(void)
     /* Read AL Event-Register from ESC */
     ALEventReg = HW_GetALEventRegister();
     ALEventReg = SWAPWORD(ALEventReg);
-
-
+	
     if ((ALEventReg & AL_CONTROL_EVENT) && !bEcatWaitForAlControlRes)
     {
         /* AL Control event is set, get the AL Control register sent by the Master to acknowledge the event

@@ -415,11 +415,13 @@ this is only used if the switch MAILBOX_QUEUE is set */
 #define OBJ_STRUCT_PACKED_END 
 
 /* OBJ_DWORD_ALIGN: Shall be set if the object structures are not Byte aligned and the Code is executed on an 32bit platform */
-#define OBJ_DWORD_ALIGN                           1
+#define OBJ_DWORD_ALIGN                           0
 
 /* OBJ_WORD_ALIGN: Shall be set if the object structures are not Byte aligned and the Code is executed on an 16bit platform */
 #define OBJ_WORD_ALIGN                            1
-
+/*CAUTION: In C:\Program Files\Arduino\hardware\tools\avr\avr\lib\ldscripts\avr6.x (atmega2560 is avr6), 
+	. = ALIGN(2) is in .data section;
+	Attention should be paid if errors encountered or chip is changed. */
 
 /*-----------------------------------------------------------------------------------------
 ------	

@@ -10,13 +10,38 @@
 #include "ecatcoe.h"
 #include "mailbox.h"
 #include "sdoserv.h"
+#include "objdef.h"
 
 //==========================HWDIFINES====================================
 #define ECAT_TIMER_INC_P_MS                1000    //1000 micros/ms
 #define ECAT_INTERRUPT_NO					0
 
+/*--------------------------------------------------------------------------------------
+------
+------    internal Types and Defines
+------
+--------------------------------------------------------------------------------------*/
+
+typedef union
+{
+    unsigned short    Word;
+    unsigned char    Byte[2];
+} UBYTETOWORD;
+
+typedef union 
+{
+    UINT8           Byte[2];
+    UINT16          Word;
+}
+UALEVENT;
+
+
 class Ethercat
 {
+public:
+	Ethercat();
+	~Ethercat();
+private:
 	//=========================ECATSLV_H=================================
     BOOL                           bEcatOutputUpdateRunning;           // indicates the OP state, will be set in StartOutputHandler
                                                                             // and reset in StopOutputHandler
@@ -66,17 +91,18 @@ class Ethercat
 	BOOL bEtherCATRunLed;
 	BOOL bEtherCATErrorLed;
 	BOOL bRunApplication;
-	UINT16 MainInit(void);
 public:
-	void MainLoop(void);
-private:
-    void       ECAT_CheckTimer(void);
+	UINT16 MainInit(void);
+	void 	   MainLoop(void);
     void       PDI_Isr(void);
     void       Sync0_Isr(void);
+private:
+    void       ECAT_CheckTimer(void);
     void       ECAT_Application(void);
     void       PDO_ResetOutputs(void);
     void       PDO_ReadInputs(void);
     void       PDO_InputMapping(void);
+	void       PDO_OutputMapping(void);
     void       ECAT_SetLedIndication(void);
     void       CalcSMCycleTime(void);
 	
@@ -110,18 +136,9 @@ private:
 	UINT8    MBX_CopyToSendMailbox(TMBX MBXMEM *pMbx);
 	void     MBX_Main(void);
 	
-	//=========================COE_H=================================
-	void COE_ObjInit(void);
-	void COE_Main(void);
-	UINT16 COE_ObjDictionaryInit(void);
-	UINT16 COE_AddObjectToDic(TOBJECT OBJMEM * pNewObjEntry);
-	void COE_RemoveDicEntry(UINT16 index);
-	void COE_ClearObjDictionary(void);
 
 	//==========================OBJ_H==================================
 	TCYCLEDIAG sCycleDiag;
-	TSYNCMANPAR MBXMEM sSyncManOutPar;
-	TSYNCMANPAR MBXMEM sSyncManInPar;
     OBJCONST TOBJECT OBJMEM *  OBJ_GetObjectHandle( UINT16 index );
     UINT16     OBJ_GetObjectLength( UINT16 index, UINT8 subindex, OBJCONST TOBJECT OBJMEM * pObjEntry, UINT8 bCompleteAccess);
     UINT16    OBJ_GetNoOfObjects(UINT8 listType);
@@ -133,8 +150,10 @@ private:
     UINT8     OBJ_Read( UINT16 index, UINT8 subindex, UINT32 completeSize, OBJCONST TOBJECT OBJMEM * pObjEntry, UINT16 MBXMEM * pData, UINT8 bCompleteAccess );
     UINT8     OBJ_Write( UINT16 index, UINT8 subindex, UINT32 completeSize, OBJCONST TOBJECT OBJMEM * pObjEntry, UINT16 MBXMEM * pData, UINT8 bCompleteAccess );
     void    COE_WriteBackupEntry(UINT8 subindex, OBJCONST TOBJECT OBJMEM * pObjEntry);
- 	
-	
+public:
+ 	TSYNCMANPAR MBXMEM sSyncManOutPar;
+	TSYNCMANPAR MBXMEM sSyncManInPar;
+private:	
 	//========================ECATCOE_H================================
 	TMBX MBXMEM * VARMEM pCoeSendStored;                /* if the mailbox service could not be sent (or stored),
                                                                 the CoE service will be stored in this variable
@@ -168,7 +187,7 @@ private:
 	UINT8 SDOS_SdoInfoInd(TSDOINFORMATION MBXMEM *pSdoInfoInd);
 	UINT8 SDOS_SdoInd(TINITSDOMBX MBXMEM *pSdoMbx);
 	void  SDOS_SdoRes(UINT8 abort, UINT32 objLength, UINT16 MBXMEM *pData);
-
+	void SdoRes(UINT8 abort, UINT8 command, UINT8 completeAccess, UINT16 dataSize, UINT32 objLength, TINITSDOMBX MBXMEM *pSdoRes);
 	//=======================COEAPPL_H=================================
 	OBJCONST TOBJECT OBJMEM * COE_GetObjectDictionary(void);
 	void COE_ObjInit(void);
@@ -177,12 +196,15 @@ private:
 	UINT16 COE_AddObjectToDic(TOBJECT OBJMEM * pNewObjEntry);
 	void COE_RemoveDicEntry(UINT16 index);
 	void COE_ClearObjDictionary(void);
+	UINT16 AddObjectsToObjDictionary(TOBJECT OBJMEM * pObjEntry);
 	
 	//====================HARDWARE_H===================================
+#define ESC_RD                    0x02            ///< read access to ESC
+#define ESC_WR                    0x04            ///< write access to ESC	
 	void inline DISABLE_ESC_INT()
 	{	detachInterrupt(ECAT_INTERRUPT_NO);	}
 	void inline ENABLE_ESC_INT()
-	{	attachInterrupt(ECAT_INTERRUPT_NO);	}
+	{	attachInterrupt(ECAT_INTERRUPT_NO,0,FALLING);	}
 	unsigned long lastTime;
 	unsigned long inline HW_GetTimer()
 	{	return micros()-lastTime;	}	//auto overflow
@@ -191,8 +213,9 @@ private:
 
 public:
 	UINT8 HW_Init(void);
-	void HW_Release(void);
+
 private:
+	void HW_Release(void);
 	UINT16 HW_GetALEventRegister(void);
 	UINT16 HW_GetALEventRegister_Isr(void);
 	void HW_ResetALEventMask(UINT16 intMask);
@@ -200,39 +223,40 @@ private:
 	void HW_SetLed(UINT8 RunLed,UINT8 ErrLed);
 
 	void HW_EscRead( MEM_ADDR * pData, UINT16 Address, UINT16 Len );
-	void inline HW_EscReadWord( UINT16 WordValue, UINT16 Address)
+	void inline HW_EscReadWord( UINT16& WordValue, UINT16 Address)
 	{	HW_EscRead(((MEM_ADDR *)&(WordValue)),((UINT16)(Address)),2);	}
-	void inline HW_EscReadDWord( UINT32 DWordValue, UINT16 Address)
+	void inline HW_EscReadDWord( UINT32& DWordValue, UINT16 Address)
 	{	HW_EscRead(((MEM_ADDR *)&(DWordValue)),((UINT16)(Address)),4);	}
-	void inline HW_EscReadMbxMem(MEM_ADDR pData, UINT16 Address,UINT16 Len)
-	{	HW_EscRead(((MEM_ADDR *)(pData)),((UINT16)(Address)),(Len))	}
+	void inline HW_EscReadMbxMem(MEM_ADDR *pData, UINT16 Address,UINT16 Len)
+	{	HW_EscRead(((MEM_ADDR *)(pData)),((UINT16)(Address)),(Len));	}
 
 
 	void HW_EscReadIsr( MEM_ADDR *pData, UINT16 Address, UINT16 Len );
-	void inline HW_EscReadWordIsr(UINT16 WordValue, UINT16 Address)
+	void inline HW_EscReadWordIsr(UINT16 &WordValue, UINT16 Address)
 	{	HW_EscReadIsr(((MEM_ADDR *)&(WordValue)),((UINT16)(Address)),2);	}
-	void inline HW_EscReadDWordIsr(UINT32 DWordValue, UINT16 Address) 
-	{	HW_EscReadIsr(((MEM_ADDR *)&(DWordValue)),((UINT16)(Address)),4)	}
+	void inline HW_EscReadDWordIsr(UINT32 &DWordValue, UINT16 Address) 
+	{	HW_EscReadIsr(((MEM_ADDR *)&(DWordValue)),((UINT16)(Address)),4);	}
 
 	void HW_EscWrite( MEM_ADDR *pData, UINT16 Address, UINT16 Len );
 	void inline HW_EscWriteWord(UINT16 WordValue, UINT16 Address) 
-	{	HW_EscWrite(((MEM_ADDR *)&(WordValue)),((UINT16)(Address)),2)	}
+	{	HW_EscWrite(((MEM_ADDR *)&(WordValue)),((UINT16)(Address)),2);	}
 	void inline HW_EscWriteDWord(UINT32 DWordValue, UINT16 Address) 
-	{	HW_EscWrite(((MEM_ADDR *)&(DWordValue)),((UINT16)(Address)),4)	}
-	void inline HW_EscWriteMbxMem(MEM_ADDR pData,UINT16 Address,UINT16 Len) 
-	{	HW_EscWrite(((MEM_ADDR *)(pData)),((UINT16)(Address)),(Len))	}
+	{	HW_EscWrite(((MEM_ADDR *)&(DWordValue)),((UINT16)(Address)),4);	}
+	void inline HW_EscWriteMbxMem(MEM_ADDR *pData,UINT16 Address,UINT16 Len) 
+	{	HW_EscWrite(((MEM_ADDR *)(pData)),((UINT16)(Address)),(Len));	}
 
 	void HW_EscWriteIsr( MEM_ADDR *pData, UINT16 Address, UINT16 Len );
 	void inline HW_EscWriteWordIsr(UINT16 WordValue, UINT16 Address) 
-	{	HW_EscWriteIsr(((MEM_ADDR *)&(WordValue)),((UINT16)(Address)),2)	}
+	{	HW_EscWriteIsr(((MEM_ADDR *)&(WordValue)),((UINT16)(Address)),2);	}
 	void inline HW_EscWriteDWordIsr(UINT32 DWordValue, UINT16 Address) 
-	{	HW_EscWriteIsr(((MEM_ADDR *)&(DWordValue)),((UINT16)(Address)),4)	}
+	{	HW_EscWriteIsr(((MEM_ADDR *)&(DWordValue)),((UINT16)(Address)),4);	}
 
 	void HW_DisableSyncManChannel(UINT8 channel);
 	void HW_EnableSyncManChannel(UINT8 channel);
 	TSYNCMAN ESCMEM *HW_GetSyncMan(UINT8 channel);	
 	
-	
+	//=====================COEAPPL_C==========================
+	TOBJECT    OBJMEM * ObjDicList;	
 	//====================ECATAPPL_C==========================
 	/*variables only required to calculate values for SM Synchronisation objects (0x1C3x)*/
 	UINT16 u16BusCycleCntMs;        //used to calculate the bus cycle time in Ms
@@ -245,17 +269,30 @@ private:
 	UINT16           aPdInputData[(MAX_PD_INPUT_SIZE>>1)];
 	#endif
 	//===================ECATSLV_C============================
-	VARVOLATILE UINT16    u16dummy;
+	//VARVOLATILE UINT16    u16dummy;
+	UINT16    u16dummy;
 	UINT16    u16ALEventMask;
+	UINT8    CheckSmSettings(UINT8 maxChannel);
+	UINT16 StartInputHandler(void);
+	UINT16 StartOutputHandler(void);
+	void StopOutputHandler(void);
+	void StopInputHandler(void);
+	void AL_ControlRes(void);
 	//===================OBJDEF_C=============================
-	const UINT16 cBitMask[16];
+	static const UINT16 cBitMask[16];
+	static CHAR OBJMEM aSubindexDesc[13];
+	void OBJ_CopyNumberToString(UCHAR MBXMEM *pStr, UINT8 Number);
+	//==================MAILBOX_C=============================
+	UINT8 PutInMbxQueue(TMBX MBXMEM * pMbx, TMBXQUEUE MBXMEM * pQueue);
+	TMBX MBXMEM * GetOutOfMbxQueue(TMBXQUEUE MBXMEM * pQueue);
+	UINT8 MailboxServiceInd(TMBX MBXMEM *pMbx);
 	//===================SDOSERVE_C===========================
-	const UINT32 MBXMEM cAbortCode[];
+	static const UINT32 MBXMEM cAbortCode[];
 	UINT16 VARMEM                            nSdoInfoIndex;
 	OBJCONST TOBJECT OBJMEM * VARMEM        pSdoInfoObjEntry;
 
 	TINITSDOMBX MBXMEM *    VARMEM            pSdoResStored;
-	BOOL    VARMEM                            bSdoInWork = FALSE;
+	static BOOL    VARMEM                            bSdoInWork;
 
 	UINT8    VARMEM                         nSdoSegService;
 	UINT8    VARMEM                         bSdoSegFollows;
@@ -266,27 +303,33 @@ private:
 	UINT8 VARMEM                            bSdoSegLastToggle;
 	UINT32 VARMEM                           nSdoSegCompleteSize;
 	OBJCONST TOBJECT OBJMEM * VARMEM        pSdoSegObjEntry;
+	UINT8 SdoDownloadSegmentInd( TDOWNLOADSDOSEGREQMBX MBXMEM * pSdoInd );
+	UINT8 SdoUploadSegmentInd( TUPLOADSDOSEGREQMBX MBXMEM * pSdoInd );
 	//===================HARDWARE_C============================
 	UALEVENT         EscALEvent;            //contains the content of the ALEvent register (0x220), this variable is updated on each Access to the Esc
 	UINT16            nAlEventMask;        //current ALEventMask (content of register 0x204:0x205)
 	TSYNCMAN        TmpSyncMan;
-}
+	void GetInterruptRegister(void);
+	void ISR_GetInterruptRegister(void);
+	void AddressingEsc( UINT16 Address, UINT8 Command );
+	void ISR_AddressingEsc( UINT16 Address, UINT8 Command );
+	//==============Application handlers========================
+	void APPL_Application(void);
 
+	void   APPL_AckErrorInd(UINT16 stateTrans);
+	UINT16 APPL_StartMailboxHandler(void);
+	UINT16 APPL_StopMailboxHandler(void);
+	UINT16 APPL_StartInputHandler(UINT16 *pIntMask);
+	UINT16 APPL_StopInputHandler(void);
+	UINT16 APPL_StartOutputHandler(void);
+	UINT16 APPL_StopOutputHandler(void);
 
+	UINT16 APPL_GenerateMapping(UINT16 *pInputSize,UINT16 *pOutputSize);
+	void APPL_InputMapping(UINT16* pData);
+	void APPL_OutputMapping(UINT16* pData);
+};
 
-//==============Application handlers========================
-PROTO void APPL_Application(void);
+extern Ethercat ethercat;
 
-PROTO void   APPL_AckErrorInd(UINT16 stateTrans);
-PROTO UINT16 APPL_StartMailboxHandler(void);
-PROTO UINT16 APPL_StopMailboxHandler(void);
-PROTO UINT16 APPL_StartInputHandler(UINT16 *pIntMask);
-PROTO UINT16 APPL_StopInputHandler(void);
-PROTO UINT16 APPL_StartOutputHandler(void);
-PROTO UINT16 APPL_StopOutputHandler(void);
-
-PROTO UINT16 APPL_GenerateMapping(UINT16 *pInputSize,UINT16 *pOutputSize);
-PROTO void APPL_InputMapping(UINT16* pData);
-PROTO void APPL_OutputMapping(UINT16* pData);
 
 #endif

@@ -89,13 +89,13 @@
 //extern UINT16 OBJ_GetDesc( UINT16 index, UINT8 subindex, OBJCONST TOBJECT OBJMEM * pObjEntry, UINT16 MBXMEM * pData );
 //extern OBJCONST TSDOINFOENTRYDESC OBJMEM * OBJ_GetEntryDesc(OBJCONST TOBJECT OBJMEM * pObjEntry, UINT8 Subindex);
 //extern OBJCONST TSDOINFOOBJDESC OBJMEM * OBJ_GetObjDesc(OBJCONST TOBJECT OBJMEM * pObjEntry);
-
+BOOL    VARMEM                            Ethercat::bSdoInWork = FALSE;
 /*---------------------------------------------------------------------------------------
 ------
 ------    Modulintern variable definitions
 ------
 ---------------------------------------------------------------------------------------*/
-
+/*
 const UINT32 MBXMEM Ethercat::cAbortCode[] =
 {
     ABORT_NOERROR,
@@ -127,7 +127,7 @@ const UINT32 MBXMEM Ethercat::cAbortCode[] =
     ABORT_NO_OBJECT_DICTIONARY_IS_PRESENT,
     ABORT_ENTRY_CANT_BE_WRITTEN_SI0_NOT_0
 };
-
+*/
 /*
 UINT16 VARMEM                            nSdoInfoIndex;
 OBJCONST TOBJECT OBJMEM * VARMEM        pSdoInfoObjEntry;
@@ -175,7 +175,7 @@ OBJCONST TOBJECT OBJMEM * VARMEM        pSdoSegObjEntry;
             function sends a response by itself.
 *////////////////////////////////////////////////////////////////////////////////////////
 
-static UINT8 Ethercat::SdoDownloadSegmentInd( TDOWNLOADSDOSEGREQMBX MBXMEM * pSdoInd )
+UINT8 Ethercat::SdoDownloadSegmentInd( TDOWNLOADSDOSEGREQMBX MBXMEM * pSdoInd )
 {
     UINT8 abort = 0;
     UINT32 bytesToSave = 0;
@@ -344,7 +344,7 @@ static UINT8 Ethercat::SdoDownloadSegmentInd( TDOWNLOADSDOSEGREQMBX MBXMEM * pSd
             response and sends it by itself.
 *////////////////////////////////////////////////////////////////////////////////////////
 
-static UINT8 Ethercat::SdoUploadSegmentInd( TUPLOADSDOSEGREQMBX MBXMEM * pSdoInd )
+UINT8 Ethercat::SdoUploadSegmentInd( TUPLOADSDOSEGREQMBX MBXMEM * pSdoInd )
 {
     UINT8 abort = 0;
     TUPLOADSDOSEGRESMBX MBXMEM * pSdoSegRes = (TUPLOADSDOSEGRESMBX MBXMEM *)pSdoInd;

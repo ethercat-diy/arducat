@@ -80,14 +80,14 @@
 ------
 -----------------------------------------------------------------------------------------*/
 
-#define    _ECATAPPL_ 1
-#include "ecatappl.h"
-#undef _ECATAPPL_
-#define    _ECATAPPL_ 0
+//#define    _ECATAPPL_ 1
+//#include "ecatappl.h"
+//#undef _ECATAPPL_
+//#define    _ECATAPPL_ 0
 
-#include "objdef.h"
-#include "ecatslv.h"
-#include "el9800appl.h"
+//#include "objdef.h"
+//#include "ecatslv.h"
+//#include "el9800appl.h"
 #include "ethercat.h"
 
 
@@ -463,7 +463,7 @@ UINT16 Ethercat::MainInit()
 
 *////////////////////////////////////////////////////////////////////////////////////////
 
-void MainLoop(void)
+void Ethercat::MainLoop(void)
 {
         /* FreeRun-Mode:  bEscIntEnabled = FALSE, bDcSyncActive = FALSE
            Synchron-Mode: bEscIntEnabled = TRUE, bDcSyncActive = FALSE
@@ -524,6 +524,8 @@ void MainLoop(void)
         }
 
         /* call EtherCAT functions */
+		//cx
+//		Serial.println("Mainloop");
         ECAT_Main();
 
         /* call lower prior application part */

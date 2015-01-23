@@ -86,9 +86,9 @@
 ------
 -----------------------------------------------------------------------------------------*/
 
-#include "ecat_def.h"
+//#include "ecat_def.h"
 
-#include "objdef.h"
+//#include "objdef.h"
 
 #include "ethercat.h"
 
@@ -98,216 +98,20 @@
 ------    Backup Parameter
 ------
 -----------------------------------------------------------------------------------------*/
+/*
 extern const UINT32 VENDOR_ID;
 extern const UINT32 PRODUCT_CODE;
 extern const UINT32 REVISION_NUMBER;
 extern const UINT32 DEVICE_PROFILE_TYPE;
-extern const char[] DEVICE_NAME; 
+extern const char DEVICE_NAME[]; 
 extern const UINT8 DEVICE_NAME_LEN;
-extern const char[] DEVICE_HW_VERSION;
+extern const char DEVICE_HW_VERSION[];
 extern const UINT8 DEVICE_HW_VERSION_LEN;
-extern const char[]  DEVICE_SW_VERSION;
+extern const char  DEVICE_SW_VERSION[];
 extern const UINT8 DEVICE_SW_VERSION_LEN;
-
-/*-----------------------------------------------------------------------------------------
-------
-------    Generic EtherCAT device object
-------
------------------------------------------------------------------------------------------*/
-
-/******************************************************************************
-** Object 0x1000
-******************************************************************************/
-UINT32 u32Devicetype = (DEVICE_PROFILE_TYPE);
-OBJCONST TSDOINFOENTRYDESC    OBJMEM sEntryDesc0x1000 = {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ};
-OBJCONST UCHAR OBJMEM aName0x1000[] = "Device type";
-
-/******************************************************************************
-** Object 0x1001
-******************************************************************************/
-UINT16 u16ErrorRegister = 0x0;
-OBJCONST TSDOINFOENTRYDESC    OBJMEM sEntryDesc0x1001 = {DEFTYPE_UNSIGNED8, 0x08, ACCESS_READ};
-OBJCONST UCHAR OBJMEM aName0x1001[] = "Error register";
-
-/******************************************************************************
-** Object 0x1008
-******************************************************************************/
-CHAR acDevicename[] = DEVICE_NAME;
-OBJCONST TSDOINFOENTRYDESC    OBJMEM sEntryDesc0x1008 = {DEFTYPE_VISIBLESTRING, BYTE2BIT(DEVICE_NAME_LEN), ACCESS_READ};
-OBJCONST UCHAR OBJMEM aName0x1008[] = "Device name";
-
-/******************************************************************************
-** Object 0x1009
-******************************************************************************/
-CHAR acHardwareversion[] = DEVICE_HW_VERSION;
-OBJCONST TSDOINFOENTRYDESC    OBJMEM sEntryDesc0x1009 = {DEFTYPE_VISIBLESTRING,BYTE2BIT(DEVICE_HW_VERSION_LEN), ACCESS_READ};
-OBJCONST UCHAR OBJMEM aName0x1009[] = "Hardware version";
-
-/******************************************************************************
-** Object 0x100A
-******************************************************************************/
-CHAR acSoftwareversion[] = DEVICE_SW_VERSION;
-OBJCONST TSDOINFOENTRYDESC    OBJMEM sEntryDesc0x100A = {DEFTYPE_VISIBLESTRING,BYTE2BIT(DEVICE_SW_VERSION_LEN), ACCESS_READ};
-OBJCONST UCHAR OBJMEM aName0x100A[] = "Software version";
-
-
-/******************************************************************************
-** Object 0x1018
-******************************************************************************/
-typedef struct OBJ_STRUCT_PACKED_START {
-   UINT16   u16SubIndex0;
-   UINT32   u32VendorID;
-   UINT32   u32Productcode;
-   UINT32   u32Revision;
-   UINT32   u32Serialnumber;
-} OBJ_STRUCT_PACKED_END
-TOBJ1018;
-
-TOBJ1018 sIdentity = {4, (VENDOR_ID), (PRODUCT_CODE), (REVISION_NUMBER), (SERIAL_NUMBER)};
-OBJCONST TSDOINFOENTRYDESC    OBJMEM asEntryDesc0x1018[5] = {
-   {DEFTYPE_UNSIGNED8, 0x8, ACCESS_READ }, /* Subindex 000 */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 001: Vendor ID */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 002: Product code */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 003: Revision */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}}; /* SubIndex 004: Serial number */
-OBJCONST UCHAR OBJMEM aName0x1018[] = "Identity\000Vendor ID\000Product code\000Revision\000Serial number\000\377";
-
-
-/******************************************************************************
-** Object 0x10F1    Error Settings
-******************************************************************************/
-//object declaration and initialization in objdef.h
-OBJCONST TSDOINFOENTRYDESC    OBJMEM asEntryDesc0x10F1[3] = {
-   {DEFTYPE_UNSIGNED8, 0x8, ACCESS_READ }, /* Subindex 000 */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 001: Local Error Reaction */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}}; /* SubIndex 002: Sync Error Counter Limit*/
-OBJCONST UCHAR OBJMEM aName0x10F1[] = "Error Settings\000Local Error Reaction\000Sync Error Counter Limit\000\377";
-
-/******************************************************************************
-** Object 0x1C00
-******************************************************************************/
-typedef struct OBJ_STRUCT_PACKED_START {
-   UINT16   u16SubIndex0;
-   UINT8   aEntries[4];
-} OBJ_STRUCT_PACKED_END
-TOBJ1C00;
-
-TOBJ1C00 sSyncmanagertype = {0x04, {0x01, 0x02, 0x03, 0x04}};
-OBJCONST TSDOINFOENTRYDESC    OBJMEM asEntryDesc0x1C00[2] = {
-   {DEFTYPE_UNSIGNED8, 0x08, ACCESS_READ},
-   {DEFTYPE_UNSIGNED8, 0x08, ACCESS_READ}};
-OBJCONST UCHAR OBJMEM aName0x1C00[] = "Sync manager type";
-
-
-
-/******************************************************************************
-** Object 0x1C32
-******************************************************************************/
-OBJCONST TSDOINFOENTRYDESC    OBJMEM asEntryDesc0x1C32[] = {
-   {DEFTYPE_UNSIGNED8, 0x8, ACCESS_READ }, /* Subindex 000 */
-   {DEFTYPE_UNSIGNED16, 0x10, ACCESS_READWRITE}, /* SubIndex 001: Sync mode */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 002: Cycle time */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 003: Shift time */
-   {DEFTYPE_UNSIGNED16, 0x10, ACCESS_READ}, /* SubIndex 004: Sync modes supported */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 005: Minimum cycle time */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 006: Calc and copy time */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READWRITE}, /* Subindex 007 reserved for future use*/
-   {DEFTYPE_UNSIGNED16, 0x10, ACCESS_READWRITE}, /* SubIndex 008: Get Cycle Time */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 009: Delay time */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READWRITE}, /* SubIndex 010: Sync0 time */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 011: SM event missed counter */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 012: Cycle exceeded counter */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 013: Shift too short counter */
-   {0x0000, 0, 0}, /* Subindex 014 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 015 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 016 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 017 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 018 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 019 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 020 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 021 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 022 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 023 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 024 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 025 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 026 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 027 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 028 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 029 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 030 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 031 doesn't exist */
-   {DEFTYPE_BOOLEAN, 0x01, ACCESS_READ}}; /* SubIndex 032: Sync error */
-/*ECATCHANGE_START(V5.01) COE1*/
-OBJCONST UCHAR OBJMEM aName0x1C32[] = "SM output parameter\000Sync mode\000Cycle time\000Shift time\000Sync modes supported\000Minimum cycle time\000Calc and copy time\000Reserved\000Get Cycle Time\000Delay time\000Sync0 time\000SM event missed counter\000Cycle exceeded counter\000Shift too short counter\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000Sync error\000\377";
-/*ECATCHANGE_START(V5.01) COE1*/
-/******************************************************************************
-** Object 0x1C33
-******************************************************************************/
-OBJCONST TSDOINFOENTRYDESC    OBJMEM asEntryDesc0x1C33[] = {
-   {DEFTYPE_UNSIGNED8, 0x8, ACCESS_READ }, /* Subindex 000 */
-   {DEFTYPE_UNSIGNED16, 0x10, ACCESS_READWRITE}, /* SubIndex 001: Sync mode */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 002: Cycle time */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 003: Shift time */
-   {DEFTYPE_UNSIGNED16, 0x10, ACCESS_READ}, /* SubIndex 004: Sync modes supported */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 005: Minimum cycle time */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 006: Calc and copy time */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READWRITE}, /* Subindex 007 reserved for future use*/
-   {DEFTYPE_UNSIGNED16, 0x10, ACCESS_READWRITE}, /* SubIndex 008: Get Cycle Time */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 009: Delay time */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READWRITE}, /* SubIndex 010: Sync0 time */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 011: SM event missed counter */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 012: Cycle exceeded counter */
-   {DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ}, /* SubIndex 013: Shift too short counter */
-   {0x0000, 0, 0}, /* Subindex 014 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 015 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 016 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 017 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 018 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 019 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 020 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 021 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 022 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 023 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 024 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 025 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 026 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 027 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 028 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 029 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 030 doesn't exist */
-   {0x0000, 0, 0}, /* Subindex 031 doesn't exist */
-   {DEFTYPE_BOOLEAN, 0x01, ACCESS_READ}}; /* SubIndex 032: Sync error */
-/*ECATCHANGE_START(V5.01) COE1*/
-OBJCONST UCHAR OBJMEM aName0x1C33[] = "SM input parameter\000Sync mode\000Cycle time\000Shift time\000Sync modes supported\000Minimum cycle time\000Calc and copy time\000Reserved\000Get Cycle Time\000Delay time\000Sync0 time\000Cycle exceeded counter\000SM event missed counter\000Shift too short counter\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000Sync error\000\377";
-/*ECATCHANGE_START(V5.01) COE1*/
-/******************************************************************************
-** Object Dictionary
-******************************************************************************/
-TOBJECT    OBJMEM * ObjDicList = NULL;
-
-TOBJECT    OBJMEM GenObjDic[] = {
-    /* Object 0x1000 */
-   {NULL,NULL,  0x1000, {DEFTYPE_UNSIGNED32, 0 | (OBJCODE_VAR << 8)}, &sEntryDesc0x1000, aName0x1000, &u32Devicetype, NULL, NULL, 0x0000 },
-   /* Object 0x1001 */
-   {NULL,NULL,  0x1001, {DEFTYPE_UNSIGNED8, 0 | (OBJCODE_VAR << 8)}, &sEntryDesc0x1001, aName0x1001, &u16ErrorRegister, NULL, NULL, 0x0000 },
-/* Object 0x1008 */
-   {NULL,NULL,  0x1008, {DEFTYPE_VISIBLESTRING, 0 | (OBJCODE_VAR << 8)}, &sEntryDesc0x1008, aName0x1008, acDevicename, NULL, NULL, 0x0000 },
-   /* Object 0x1009 */
-   {NULL,NULL,  0x1009, {DEFTYPE_VISIBLESTRING, 0 | (OBJCODE_VAR << 8)}, &sEntryDesc0x1009, aName0x1009, acHardwareversion, NULL, NULL, 0x0000 },
-   /* Object 0x100A */
-   {NULL,NULL,  0x100A, {DEFTYPE_VISIBLESTRING, 0 | (OBJCODE_VAR << 8)}, &sEntryDesc0x100A, aName0x100A, acSoftwareversion, NULL, NULL, 0x0000 },
-   /* Object 0x1018 */
-   {NULL,NULL,  0x1018, {DEFTYPE_IDENTITY, 4 | (OBJCODE_REC << 8)}, asEntryDesc0x1018, aName0x1018, &sIdentity, NULL, NULL, 0x0000 },
-    /* Object 0x10F1 */
-   {NULL,NULL,  0x10F1, {DEFTYPE_RECORD, 2 | (OBJCODE_REC << 8)}, asEntryDesc0x10F1, aName0x10F1, &sErrorSettings, NULL, NULL, 0x0000 },
-   /* Object 0x1C00 */
-   {NULL,NULL, 0x1C00, {DEFTYPE_UNSIGNED8, 4 | (OBJCODE_ARR << 8)}, asEntryDesc0x1C00, aName0x1C00, &sSyncmanagertype, NULL, NULL, 0x0000 },
-   /* Object 0x1C32 */
-   {NULL,NULL, 0x1C32, {DEFTYPE_SMPAR, 32 | (OBJCODE_REC << 8)}, asEntryDesc0x1C32, aName0x1C32, &sSyncManOutPar, NULL, NULL, 0x0000 },
-   /* Object 0x1C33 */
-   {NULL,NULL, 0x1C33, {DEFTYPE_SMPAR, 32 | (OBJCODE_REC << 8)}, asEntryDesc0x1C33, aName0x1C33, &sSyncManInPar, NULL, NULL, 0x0000 },
-  /*end of entries*/
-   {NULL,NULL,    0xFFFF, {0, 0}, NULL, NULL, NULL, NULL}};
+*/
+extern TOBJECT    OBJMEM GenObjDic[];
+extern TOBJECT    OBJMEM ApplicationObjDic[];
 
 
 /*-----------------------------------------------------------------------------------------
