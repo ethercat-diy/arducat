@@ -371,8 +371,8 @@ UINT8 Ethercat::MailboxServiceInd(TMBX MBXMEM *pMbx)
 {
     UINT8 result;
 
-//	UINT16 tempCX = (pMbx->MbxHeader.Flags[MBX_OFFS_TYPE] & MBX_MASK_TYPE) >> MBX_SHIFT_TYPE;
-//	tempCX++;
+	UINT16 tempCX = (pMbx->MbxHeader.Flags[MBX_OFFS_TYPE] & MBX_MASK_TYPE) >> MBX_SHIFT_TYPE;
+	tempCX++;
     switch ( (pMbx->MbxHeader.Flags[MBX_OFFS_TYPE] & MBX_MASK_TYPE) >> MBX_SHIFT_TYPE )
     {
     case MBX_TYPE_COE:
@@ -753,7 +753,7 @@ UINT8 Ethercat::MBX_CopyToSendMailbox( TMBX MBXMEM *pMbx )
         /*Read Control and Status of SyncManager 1 to check if the buffer is still marked as empty*/
 //        VARVOLATILE UINT16 smstate = 0x00;
         UINT16 smstate = 0x00;
-        HW_EscReadWord(smstate,(ESC_SYNCMAN_CONTROL_OFFSET + SYNCMAN_REG_SIZE));
+		HW_EscReadWord(smstate,(ESC_SYNCMAN_CONTROL_OFFSET + SYNCMAN_REG_SIZE));
 
         if(!(smstate & SM_STATUS_MBX_BUFFER_FULL))
         {
