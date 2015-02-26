@@ -15,7 +15,7 @@ void setup() {
   // initialize digital pin 13 as an output.
   //pinMode(13, OUTPUT);
   Serial.begin(115200);
-  Serial.print("setup");
+  Serial.println("setup");
   delay(1000);            //wait for 10ms
   ethercat.HW_Init();
   ethercat.MainInit();
