@@ -425,7 +425,7 @@ UINT8 Ethercat::HW_Init(void)
 	//*****LPC_GPIO3->DIR |= 1<<4;
 
       /* initialize the SPI registers for the ESC SPI */
-	SPI.setClockDivider(2);
+	SPI.setClockDivider(SPI_CLOCK_DIV8);
 	//LPC_SYSCON->PRESETCTRL |= 0x01;
 	//LPC_SYSCON->SSP0CLKDIV = 0x01;
 	//SPI1_CPSR = SPI1_CPSR_VALUE;

@@ -647,7 +647,7 @@ UINT16 Ethercat::APPL_GenerateMapping(UINT16* pInputSize,UINT16* pOutputSize)
 *////////////////////////////////////////////////////////////////////////////////////////
 void Ethercat::APPL_InputMapping(UINT16* pData)
 {
-  //*pData = sDIOutputs.i16DigitalInput[0];
+  *pData = sDIInputs.i16DigitalInput[0];
 /*    UINT16 j = 0;
 	*pData = inputState;
 	for(j=0;j<4;j++)
