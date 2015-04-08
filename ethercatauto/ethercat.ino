@@ -224,7 +224,7 @@ TOBJECT    OBJMEM GenObjDic[] = {
 
 /*PDO assign entry description*/
 OBJCONST TSDOINFOENTRYDESC    OBJMEM asPDOAssignEntryDesc[] = {
-   {DEFTYPE_UNSIGNED8, 0x08, ACCESS_READ|ACCESS_WRITE},
+   {DEFTYPE_UNSIGNED16, 0x10, ACCESS_READ|ACCESS_WRITE},
    {DEFTYPE_UNSIGNED16, 0x10, ACCESS_READ|ACCESS_WRITE}};
 
 
@@ -237,7 +237,7 @@ typedef struct OBJ_STRUCT_PACKED_START {
 	UINT32   aEntries[8];
 } OBJ_STRUCT_PACKED_END
 TOBJ0x1600;
-TOBJ0x1600 Obj0x1600
+TOBJ0x1600 Obj0x1600 __attribute__ ((aligned (2)))
 ={8, {0x70000120,0x70000220,0x70000320,0x70000420,0x70010103,0x70010201,0x00000004,0x70010305,}};
 OBJCONST TSDOINFOENTRYDESC OBJMEM asEntryDesc0x1600[] = {
 	{DEFTYPE_UNSIGNED16, 0x10, ACCESS_READ },
@@ -256,10 +256,10 @@ OBJCONST UCHAR OBJMEM aName0x1600[] = "Output Mapping 00\000\377";
 ****************************************************/
 typedef struct OBJ_STRUCT_PACKED_START {
 	UINT16   u16SubIndex0;
-	UINT32   aEntries[1];
+	UINT16   aEntries[1];
 } OBJ_STRUCT_PACKED_END
 TOBJ0x1C12;
-TOBJ0x1C12 sRxPDOassign
+TOBJ0x1C12 sRxPDOassign __attribute__ ((aligned (2))) 
 ={1, {0x1600}};
 OBJCONST UCHAR OBJMEM aName0x1C12[] = "RXPDO assign";
 /****************************************************
@@ -270,7 +270,7 @@ typedef struct OBJ_STRUCT_PACKED_START {
 	UINT32   aEntries[6];
 } OBJ_STRUCT_PACKED_END
 TOBJ0x1A00;
-TOBJ0x1A00 Obj0x1A00
+TOBJ0x1A00 Obj0x1A00 __attribute__ ((aligned (2)))
 ={6, {0x60000108,0x60000220,0x60000303,0x60000401,0x00000004,0x60000505,}};
 OBJCONST TSDOINFOENTRYDESC OBJMEM asEntryDesc0x1A00[] = {
 	{DEFTYPE_UNSIGNED16, 0x10, ACCESS_READ },
@@ -290,7 +290,7 @@ typedef struct OBJ_STRUCT_PACKED_START {
 	UINT32   aEntries[1];
 } OBJ_STRUCT_PACKED_END
 TOBJ0x1A01;
-TOBJ0x1A01 Obj0x1A01
+TOBJ0x1A01 Obj0x1A01 __attribute__ ((aligned (2)))
 ={1, {0x60100110,}};
 OBJCONST TSDOINFOENTRYDESC OBJMEM asEntryDesc0x1A01[] = {
 	{DEFTYPE_UNSIGNED16, 0x10, ACCESS_READ },
@@ -302,22 +302,22 @@ OBJCONST UCHAR OBJMEM aName0x1A01[] = "Input Mapping 01\000\377";
 ****************************************************/
 typedef struct OBJ_STRUCT_PACKED_START {
 	UINT16   u16SubIndex0;
-	UINT32   aEntries[2];
+	UINT16   aEntries[2];
 } OBJ_STRUCT_PACKED_END
 TOBJ0x1C13;
-TOBJ0x1C13 sTxPDOassign
+TOBJ0x1C13 sTxPDOassign __attribute__ ((aligned (2))) 
 ={2, {0x1A00,0x1A01}};
 OBJCONST UCHAR OBJMEM aName0x1C13[] = "TXPDO assign";
 /****************************************************
 ** Object0x6000
 ****************************************************/
 typedef struct OBJ_STRUCT_PACKED_START {
-	INT16 SubIndex0;
-	UINT8 SubIndex1;
-	UINT32 SubIndex2;
-	UINT8 SubIndex3;
-	UINT8 SubIndex4;
-	UINT8 SubIndex5;
+	INT16 SubIndex0 __attribute__ ((aligned (2)));
+	UINT16 SubIndex1:8 __attribute__ ((aligned (2)));
+	UINT32 SubIndex2 __attribute__ ((aligned (2)));
+	UINT16 SubIndex3:3 __attribute__ ((aligned (2)));
+	UINT16 SubIndex4:1;
+	UINT16 SubIndex5:5;
 } OBJ_STRUCT_PACKED_END
 TOBJ0x6000;
 TOBJ0x6000 Obj0x6000
@@ -335,8 +335,8 @@ OBJCONST UCHAR OBJMEM aName0x6000[] = "\000\000\000\000\000\000\377";
 ** Object0x6010
 ****************************************************/
 typedef struct OBJ_STRUCT_PACKED_START {
-	INT16 SubIndex0;
-	UINT16 SubIndex1;
+	INT16 SubIndex0 __attribute__ ((aligned (2)));
+	UINT16 SubIndex1 __attribute__ ((aligned (2)));
 } OBJ_STRUCT_PACKED_END
 TOBJ0x6010;
 TOBJ0x6010 Obj0x6010
@@ -350,11 +350,11 @@ OBJCONST UCHAR OBJMEM aName0x6010[] = "\000\000\377";
 ** Object0x7000
 ****************************************************/
 typedef struct OBJ_STRUCT_PACKED_START {
-	UINT8 SubIndex0;
-	INT32 SubIndex1;
-	INT32 SubIndex2;
-	INT32 SubIndex3;
-	INT32 SubIndex4;
+	UINT16 SubIndex0 __attribute__ ((aligned (2)));
+	INT32 SubIndex1 __attribute__ ((aligned (2)));
+	INT32 SubIndex2 __attribute__ ((aligned (2)));
+	INT32 SubIndex3 __attribute__ ((aligned (2)));
+	INT32 SubIndex4 __attribute__ ((aligned (2)));
 } OBJ_STRUCT_PACKED_END
 TOBJ0x7000;
 TOBJ0x7000 Obj0x7000
@@ -368,10 +368,10 @@ OBJCONST UCHAR OBJMEM aName0x7000[] = "Output";
 ** Object0x7001
 ****************************************************/
 typedef struct OBJ_STRUCT_PACKED_START {
-	INT16 SubIndex0;
-	UINT8 SubIndex1;
-	UINT8 SubIndex2;
-	UINT8 SubIndex3;
+	INT16 SubIndex0 __attribute__ ((aligned (2)));
+	UINT16 SubIndex1:3 __attribute__ ((aligned (2)));
+	UINT16 SubIndex2:1;
+	UINT16 SubIndex3:5;
 } OBJ_STRUCT_PACKED_END
 TOBJ0x7001;
 TOBJ0x7001 Obj0x7001
@@ -386,13 +386,13 @@ OBJCONST UCHAR OBJMEM aName0x7001[] = "\000\000\000\000\377";
 /****************************************************
 ** Object0x8000
 ****************************************************/
-INT8 Obj0x8000 = 0;
+INT16 Obj0x8000 __attribute__ ((aligned (2)))= 0;
 OBJCONST TSDOINFOENTRYDESC OBJMEM asEntryDesc0x8000 = {DEFTYPE_INTEGER8, 8, ACCESS_READ|OBJACCESS_NOPDOMAPPING};
 OBJCONST UCHAR OBJMEM aName0x8000[] = "Config1";
 /****************************************************
 ** Object0x8001
 ****************************************************/
-UINT32 Obj0x8001 = 12;
+UINT32 Obj0x8001 __attribute__ ((aligned (2)))= 12;
 OBJCONST TSDOINFOENTRYDESC OBJMEM asEntryDesc0x8001 = {DEFTYPE_UNSIGNED32, 32, ACCESS_READ|ACCESS_WRITE|OBJACCESS_NOPDOMAPPING};
 OBJCONST UCHAR OBJMEM aName0x8001[] = "Config2";
 
@@ -402,7 +402,7 @@ OBJCONST UCHAR OBJMEM aName0x8001[] = "Config2";
 TOBJECT    OBJMEM ApplicationObjDic[] = {
 	{NULL,NULL,0x1A00,{DEFTYPE_PDOMAPPING, 1 | (OBJCODE_REC << 8)}, asEntryDesc0x1A00, aName0x1A00, &Obj0x1A00, NULL, NULL, 0x0000 },
 	{NULL,NULL,0x1A01,{DEFTYPE_PDOMAPPING, 1 | (OBJCODE_REC << 8)}, asEntryDesc0x1A01, aName0x1A01, &Obj0x1A01, NULL, NULL, 0x0000 },
-	{NULL,NULL,0x1C13,{DEFTYPE_UNSIGNED16, 1 | (OBJCODE_ARR << 8)}, asPDOAssignEntryDesc, aName0x1C13, &sTxPDOassign, NULL, NULL, 0x0000 },
+	{NULL,NULL,0x1C13,{DEFTYPE_UNSIGNED16, 2 | (OBJCODE_ARR << 8)}, asPDOAssignEntryDesc, aName0x1C13, &sTxPDOassign, NULL, NULL, 0x0000 },
 	{NULL,NULL,0x1600,{DEFTYPE_PDOMAPPING, 1 | (OBJCODE_REC << 8)}, asEntryDesc0x1600, aName0x1600, &Obj0x1600, NULL, NULL, 0x0000 },
 	{NULL,NULL,0x1C12,{DEFTYPE_UNSIGNED16, 1 | (OBJCODE_ARR << 8)}, asPDOAssignEntryDesc, aName0x1C12, &sRxPDOassign, NULL, NULL, 0x0000 },
 	{NULL, NULL, 0x6000, {DEFTYPE_RECORD, 5|(OBJCODE_REC<<8)}, asEntryDesc0x6000, aName0x6000, &Obj0x6000, NULL , NULL , 0x0000 },
@@ -481,8 +481,6 @@ UINT16 Ethercat::APPL_StartInputHandler(UINT16 *pIntMask)
 {
 	//cx
 	//NVIC_EnableIRQ(TIMER_16_0_IRQn);
-  Serial.println(sTxPDOassign.aEntries[0],HEX); 
-  Serial.println(sTxPDOassign.aEntries[1],HEX); 
     return ALSTATUSCODE_NOERROR;
 }
 
@@ -632,30 +630,32 @@ UINT16 Ethercat::APPL_GenerateMapping(UINT16* pInputSize,UINT16* pOutputSize)
 void Ethercat::APPL_InputMapping(UINT16* pData)
 {
     UINT16 j = 0;
-    UINT8 *pcData = (UINT8 *)pData;
+	UINT16 u16Temp;
 
 	for (j = 0; j < sTxPDOassign.u16SubIndex0; j++)
 	{
 		switch (sTxPDOassign.aEntries[j])
 		{
 			case 0x1A00:
-				*(pcData+0) = *((UINT8*)&(Obj0x6000.SubIndex1)+0);
-				*(pcData+1) = *((UINT8*)&(Obj0x6000.SubIndex2)+0);
-				*(pcData+2) = *((UINT8*)&(Obj0x6000.SubIndex2)+1);
-				*(pcData+3) = *((UINT8*)&(Obj0x6000.SubIndex2)+2);
-				*(pcData+4) = *((UINT8*)&(Obj0x6000.SubIndex2)+3);
-				*(pcData+5) &= ~0x7;
-				*(pcData+5) |= (*((UINT8*)&(Obj0x6000.SubIndex3))<<(0))&0x7;
-				*(pcData+5) &= ~0x8;
-				*(pcData+5) |= (*((UINT8*)&(Obj0x6000.SubIndex4))<<(3))&0x8;
-				*(pcData+6) &= ~0x1f;
-				*(pcData+6) |= (*((UINT8*)&(Obj0x6000.SubIndex5))<<(0))&0x1f;
-				pcData += 7;
+				*(pData+0) &= ~0xff;
+				u16Temp = Obj0x6000.SubIndex1;
+				*(pData+0) |= (u16Temp<<(0))&0xff;
+				*(pData+0) = *((UINT16*)&(Obj0x6000.SubIndex2)+0);
+				*(pData+1) = *((UINT16*)&(Obj0x6000.SubIndex2)+1);
+				*(pData+2) &= ~0x700;
+				u16Temp = Obj0x6000.SubIndex3;
+				*(pData+2) |= (u16Temp<<(8))&0x700;
+				*(pData+2) &= ~0x800;
+				u16Temp = Obj0x6000.SubIndex4;
+				*(pData+2) |= (u16Temp<<(11))&0x800;
+				*(pData+3) &= ~0x1f;
+				u16Temp = Obj0x6000.SubIndex5;
+				*(pData+3) |= (u16Temp<<(0))&0x1f;
+				pData += 4;
 				break;
 			case 0x1A01:
-				*(pcData+0) = *((UINT8*)&(Obj0x6010.SubIndex1)+0);
-				*(pcData+1) = *((UINT8*)&(Obj0x6010.SubIndex1)+1);
-				pcData += 2;
+				*(pData+0) = *((UINT16*)&(Obj0x6010.SubIndex1)+0);
+				pData += 1;
 				break;
 
 			default:
@@ -676,33 +676,24 @@ void Ethercat::APPL_OutputMapping(UINT16* pData)
 {
   
     UINT16 j = 0;
-    UINT8 *pcData = (UINT8 *)pData;
-
+	UINT16 u16Temp;
    for (j = 0; j < sRxPDOassign.u16SubIndex0; j++)
    {
       switch (sRxPDOassign.aEntries[j])
       {
 			case 0x1600:
-				*((UINT8*)&(Obj0x7000.SubIndex1)+0) = *(pcData+0);
-				*((UINT8*)&(Obj0x7000.SubIndex1)+1) = *(pcData+1);
-				*((UINT8*)&(Obj0x7000.SubIndex1)+2) = *(pcData+2);
-				*((UINT8*)&(Obj0x7000.SubIndex1)+3) = *(pcData+3);
-				*((UINT8*)&(Obj0x7000.SubIndex2)+0) = *(pcData+4);
-				*((UINT8*)&(Obj0x7000.SubIndex2)+1) = *(pcData+5);
-				*((UINT8*)&(Obj0x7000.SubIndex2)+2) = *(pcData+6);
-				*((UINT8*)&(Obj0x7000.SubIndex2)+3) = *(pcData+7);
-				*((UINT8*)&(Obj0x7000.SubIndex3)+0) = *(pcData+8);
-				*((UINT8*)&(Obj0x7000.SubIndex3)+1) = *(pcData+9);
-				*((UINT8*)&(Obj0x7000.SubIndex3)+2) = *(pcData+10);
-				*((UINT8*)&(Obj0x7000.SubIndex3)+3) = *(pcData+11);
-				*((UINT8*)&(Obj0x7000.SubIndex4)+0) = *(pcData+12);
-				*((UINT8*)&(Obj0x7000.SubIndex4)+1) = *(pcData+13);
-				*((UINT8*)&(Obj0x7000.SubIndex4)+2) = *(pcData+14);
-				*((UINT8*)&(Obj0x7000.SubIndex4)+3) = *(pcData+15);
-				*((UINT8*)&(Obj0x7001.SubIndex1)) = (*(pcData+16)&0x7)>>(0);
-				*((UINT8*)&(Obj0x7001.SubIndex2)) = (*(pcData+16)&0x8)>>(3);
-				*((UINT8*)&(Obj0x7001.SubIndex3)) = (*(pcData+17)&0x1f)>>(0);
-				pcData += 18;
+				*((UINT16*)&(Obj0x7000.SubIndex1)+0) = *(pData+0);
+				*((UINT16*)&(Obj0x7000.SubIndex1)+1) = *(pData+1);
+				*((UINT16*)&(Obj0x7000.SubIndex2)+0) = *(pData+2);
+				*((UINT16*)&(Obj0x7000.SubIndex2)+1) = *(pData+3);
+				*((UINT16*)&(Obj0x7000.SubIndex3)+0) = *(pData+4);
+				*((UINT16*)&(Obj0x7000.SubIndex3)+1) = *(pData+5);
+				*((UINT16*)&(Obj0x7000.SubIndex4)+0) = *(pData+6);
+				*((UINT16*)&(Obj0x7000.SubIndex4)+1) = *(pData+7);
+				Obj0x7001.SubIndex1 = (u16Temp&0x7)>>(0);
+				Obj0x7001.SubIndex2 = (u16Temp&0x8)>>(3);
+				Obj0x7001.SubIndex3 = (u16Temp&0x1f00)>>(8);
+				pData += 9;
 				break;
 
 		default:

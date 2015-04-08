@@ -29,7 +29,7 @@ def GeneratePdoMappingString(listSlaveInfo,rxtx,strEntryPrefix,strPdoObjPrefix):
         strVarDecl = strVarDecl+"\tUINT32   aEntries["+str(len(itemPdoMapping[1]))+"];\n"
         strVarDecl = strVarDecl+"} OBJ_STRUCT_PACKED_END\n"
         strVarDecl = strVarDecl+"TOBJ"+itemPdoMapping[0]+';\n'
-        strVarDecl = strVarDecl+"TOBJ"+itemPdoMapping[0]+" Obj"+itemPdoMapping[0]+'\n={'
+        strVarDecl = strVarDecl+"TOBJ"+itemPdoMapping[0]+" Obj"+itemPdoMapping[0]+' __attribute__ ((aligned (2)))\n={'
         strVarDecl = strVarDecl+str(len(itemPdoMapping[1]))+', {'
         for dictEntry in itemPdoMapping[1]:
             strVarDecl = strVarDecl+str(dictEntry['Index'])+("%02d"%dictEntry['SI'])+\
@@ -60,17 +60,18 @@ def GeneratePdoMappingString(listSlaveInfo,rxtx,strEntryPrefix,strPdoObjPrefix):
     #Generate var declaration
     strVarDecl = "typedef struct OBJ_STRUCT_PACKED_START {\n"
     strVarDecl = strVarDecl+"\tUINT16   u16SubIndex0;\n"
-    strVarDecl = strVarDecl+"\tUINT32   aEntries["+str(len(dictPdoMapping))+"];\n"
+    strVarDecl = strVarDecl+"\tUINT16   aEntries["+str(len(dictPdoMapping))+"];\n"
     strVarDecl = strVarDecl+"} OBJ_STRUCT_PACKED_END\n"
     strVarDecl = strVarDecl+"TOBJ"+strPdoAssignIndex+';\n'
-    strVarDecl = strVarDecl+"TOBJ"+strPdoAssignIndex+' '+strPdoAssignVarName+'\n={'
+    strVarDecl = strVarDecl+"TOBJ"+strPdoAssignIndex+' '+strPdoAssignVarName+' __attribute__ ((aligned (2))) \n={'
     strVarDecl = strVarDecl+str(len(dictPdoMapping))+', {'
     strVarDecl = strVarDecl+','.join(dictPdoMapping.keys())
     strVarDecl = strVarDecl+'}};'
     strPdoMapping = strPdoMapping+strRemark+strVarDecl+'\n'+strObjName+'\n'
     #Generate AppObjDic of PDO assignment
     strAppObjDic = strAppObjDic+"\t{NULL,NULL,"+strPdoAssignIndex 
-    strAppObjDic = strAppObjDic+",{DEFTYPE_UNSIGNED16, 1 | (OBJCODE_ARR << 8)}, asPDOAssignEntryDesc"
+    strAppObjDic = strAppObjDic+",{DEFTYPE_UNSIGNED16, "+str(len(dictPdoMapping))
+    strAppObjDic = strAppObjDic+" | (OBJCODE_ARR << 8)}, asPDOAssignEntryDesc"
     strAppObjDic = strAppObjDic+', aName'+strPdoAssignIndex+', &'+strPdoAssignVarName
     strAppObjDic = strAppObjDic+', NULL, NULL, 0x0000 },\n'    
     return (strPdoMapping,strAppObjDic)
@@ -104,7 +105,8 @@ def ODGenerator(listSlaveInfo):
             dictEntry = dictItem['Entry'][0]
             #Generate var declaration
             strVarDecl = dictEthercatType[dictEntry['DataType']][0]
-            strVarDecl = strVarDecl+' '+"Obj"+dictItem['Index']+' = '+str(dictEntry['Default'])+';'
+            strVarDecl = strVarDecl+' '+"Obj"+dictItem['Index']+' __attribute__ ((aligned (2)))= '
+            strVarDecl = strVarDecl+str(dictEntry['Default'])+';'
             #Generate entry description
             strEntryDesc = 'OBJCONST TSDOINFOENTRYDESC OBJMEM '+'asEntryDesc'+dictItem['Index']+ ' = {'
             strEntryDesc = strEntryDesc+dictEthercatType[dictEntry['DataType']][1]
@@ -133,9 +135,19 @@ def ODGenerator(listSlaveInfo):
             strObjName = strObjName+'\\377";'
             #Generate var declaration
             strVarDecl = "typedef struct OBJ_STRUCT_PACKED_START {\n"
+            bLastBitField = 0
             for dictEntry in dictItem['Entry']:
                 strVarDecl = strVarDecl+"\t"+ dictEthercatType[dictEntry['DataType']][0]           
-                strVarDecl = strVarDecl+' '+"SubIndex"+str(dictEntry['SI'])+';\n'
+                strVarDecl = strVarDecl+' '+"SubIndex"+str(dictEntry['SI'])
+                if dictEthercatType[dictEntry['DataType']][2]<16:
+                    strVarDecl = strVarDecl+':'+str(dictEthercatType[dictEntry['DataType']][2])
+                    if bLastBitField == 0:
+                        strVarDecl = strVarDecl+' __attribute__ ((aligned (2)))'
+                    bLastBitField = 1
+                else:
+                    strVarDecl = strVarDecl+' __attribute__ ((aligned (2)))'
+                    bLastBitField = 0
+                strVarDecl = strVarDecl+';\n'
             strVarDecl = strVarDecl+"} OBJ_STRUCT_PACKED_END\n"
             strVarDecl = strVarDecl+"TOBJ"+dictItem['Index']+';\n'
             strVarDecl = strVarDecl+"TOBJ"+dictItem['Index']+" Obj"+dictItem['Index']+'\n={'
@@ -160,18 +172,19 @@ def ODGenerator(listSlaveInfo):
             #Generate var declaration
             strVarDecl = "typedef struct OBJ_STRUCT_PACKED_START {\n"
             strVarDecl = strVarDecl+"\t"+ dictEthercatType[dictItem['Entry'][0]['DataType']][0]
-            strVarDecl = strVarDecl+' '+"SubIndex0"+';\n'
+            strVarDecl = strVarDecl+' '+"SubIndex0"+' __attribute__ ((aligned (2)));\n'
             for intSI in range(1,int(dictItem['Entry'][0]['Default'])+1):
                 strVarDecl = strVarDecl+"\t"+ dictEthercatType[dictItem['Entry'][1]['DataType']][0]\
-                             +' '+"SubIndex"+str(intSI)+';\n'
+                             +' '+"SubIndex"+str(intSI)
+                if intSI==1 or dictEthercatType[dictItem['Entry'][1]['DataType']][2]>=16:
+                    strVarDecl = strVarDecl+' __attribute__ ((aligned (2)))'
+                strVarDecl = strVarDecl+';\n'
             strVarDecl = strVarDecl+"} OBJ_STRUCT_PACKED_END\n"
             strVarDecl = strVarDecl+"TOBJ"+dictItem['Index']+';\n'
             strVarDecl = strVarDecl+"TOBJ"+dictItem['Index']+" Obj"+dictItem['Index']+'\n={'
-            print dictItem
             strVarDecl = strVarDecl+str(dictItem['Entry'][0]['Default'])+','
             strVarDecl = strVarDecl+(str(dictItem['Entry'][1]['Default'])+',')*int(dictItem['Entry'][0]['Default'])
             strVarDecl = strVarDecl+'};'
-            print strVarDecl
         #Generate Remark
         strRemark = "/****************************************************\n"
         strRemark = strRemark+"** Object"+dictItem['Index']+'\n'

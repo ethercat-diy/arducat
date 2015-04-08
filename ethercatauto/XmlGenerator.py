@@ -296,8 +296,9 @@ def XmlGenerator(strXmlFile,dictSlaveInfo,listSlaveDict):
                 eSubSize = ET.SubElement(eDTSubItem, 'BitSize')
                 intSubSize = dictEthercatType[dictEntry['DataType']][2]
                 eSubSize.text = str(intSubSize)
-                if bitOffset%8!=0 and intSubSize<8 and (bitOffset%8+intSubSize>8):
-                    bitOffset = (bitOffset/8+1)*8
+                #16 bit padding
+                if bitOffset%16!=0 and intSubSize<16 and (bitOffset%16+intSubSize>16):
+                    bitOffset = (bitOffset/16+1)*16
                 eSubBitOffset = ET.SubElement(eDTSubItem, 'BitOffs')
                 eSubBitOffset.text = str(bitOffset)
                 bitOffset = bitOffset+intSubSize
@@ -361,7 +362,7 @@ def XmlGenerator(strXmlFile,dictSlaveInfo,listSlaveDict):
             eDTSize.text = str(dictEthercatType[dictSlaveInfo['Entry'][1]['DataType']][2]\
                                *int(dictSlaveInfo['Entry'][0]['Default']))
             eDTBitOffs = ET.SubElement(eDTSubItem, 'BitOffs')
-            eDTBitOffs.text = str(dictEthercatType[dictSlaveInfo['Entry'][0]['DataType']][2])
+            eDTBitOffs.text = "16"
             eDTSubFlags = ET.SubElement(eDTSubItem, 'Flags')
             eDTSubAccess = ET.SubElement(eDTSubFlags, 'Access')
             eDTSubAccess.text = dictSlaveInfo['Entry'][1]['Access'].lower()

@@ -77,19 +77,18 @@ def GenerateRxPdoMapping(listSlaveInfo):
 def GeneratePdoMappingProg(listSlaveInfo,rxtx):
     if rxtx=="rx":
         dictPdoMapping = GenerateRxPdoMapping(listSlaveInfo)
-        cmdBytesCopy = '\t\t\t\t*((UINT8*)&(%(strVarName)s)+%(intByte)d)'
-        cmdBytesCopy = cmdBytesCopy+' = *(pcData+%(ByteOffset)d);\n'
-        cmdMskShift = '\t\t\t\t*((UINT8*)&(%(strVarName)s))'
-        cmdMskShift = cmdMskShift+' = (*(pcData+%(ByteOffset)d)&0x%(intMask)x)'
-        cmdMskShift = cmdMskShift+'>>(%(intOffset)d);\n'
+        cmdWordsCopy = '\t\t\t\t*((UINT16*)&(%(strVarName)s)+%(intWord)d)'
+        cmdWordsCopy = cmdWordsCopy+' = *(pData+%(WordOffset)d);\n'
+        cmdMskShift = '\t\t\t\tu16Temp = *(pData+%(WordOffset)d);\n'
+        cmdMskShift = '\t\t\t\t%(strVarName)s = (u16Temp&0x%(intMask)x)>>(%(intOffset)d);\n'
     elif rxtx=="tx":
         dictPdoMapping = GenerateTxPdoMapping(listSlaveInfo)
-        cmdBytesCopy = '\t\t\t\t*(pcData+%(ByteOffset)d)'
-        cmdBytesCopy = cmdBytesCopy+' = *((UINT8*)&(%(strVarName)s)+%(intByte)d);\n'
-        cmdMskShift = '\t\t\t\t*(pcData+%(ByteOffset)d) &= ~0x%(intMask)x;\n'
-        cmdMskShift = cmdMskShift+'\t\t\t\t*(pcData+%(ByteOffset)d) |= '
-        cmdMskShift = cmdMskShift+'(*((UINT8*)&(%(strVarName)s))<<(%(intOffset)d))'
-        cmdMskShift = cmdMskShift+'&0x%(intMask)x;\n'
+        cmdWordsCopy = '\t\t\t\t*(pData+%(WordOffset)d)'
+        cmdWordsCopy = cmdWordsCopy+' = *((UINT16*)&(%(strVarName)s)+%(WordOffset)d);\n'
+        cmdMskShift = '\t\t\t\t*(pData+%(WordOffset)d) &= ~0x%(intMask)x;\n'
+        cmdMskShift = cmdMskShift+'\t\t\t\tu16Temp = %(strVarName)s;\n'
+        cmdMskShift = cmdMskShift+'\t\t\t\t*(pData+%(WordOffset)d) |= (u16Temp'
+        cmdMskShift = cmdMskShift+'<<(%(intOffset)d))&0x%(intMask)x;\n'
     strResult = ''
     for itemPdoMapping in dictPdoMapping.iteritems():
         bitEnd = int(0)
@@ -105,20 +104,20 @@ def GeneratePdoMappingProg(listSlaveInfo,rxtx):
                 strVarName = "Obj"+dictEntry['Index']+".SubIndex"\
                              +str(dictEntry['SI'])
             #Copy bytes variables
-            if dictEntry['Length'] >= 8:
-                for intByte in range(0,dictEntry['Length']/8):
-                    strResult = strResult+cmdBytesCopy%{'strVarName':strVarName,\
-                                              'intByte':intByte,\
-                                              'ByteOffset':dictEntry['BitOffset']/8+intByte}
+            if dictEntry['Length'] >= 16:
+                for intWord in range(0,dictEntry['Length']/16):
+                    strResult = strResult+cmdWordsCopy%{'strVarName':strVarName,\
+                                              'intWord':intWord,\
+                                              'WordOffset':dictEntry['BitOffset']/16+intWord}
             #Copy bits variables
             else:
-                intMask = int(2**(dictEntry['Length'])-1)<<(dictEntry['BitOffset']%8)
+                intMask = int(2**(dictEntry['Length'])-1)<<(dictEntry['BitOffset']%16)
                 strResult = strResult+cmdMskShift%{'strVarName':strVarName,\
                                                    'intMask':intMask,\
-                                                   'intOffset':dictEntry['BitOffset']%8,\
-                                                   'ByteOffset':dictEntry['BitOffset']/8}
+                                                   'intOffset':dictEntry['BitOffset']%16,\
+                                                   'WordOffset':dictEntry['BitOffset']/16}
             bitEnd = dictEntry['BitOffset']+dictEntry['Length']
-        strResult = strResult+'\t\t\t\tpcData += '+str((bitEnd+7)/8)+';\n'
+        strResult = strResult+'\t\t\t\tpData += '+str((bitEnd+15)/16)+';\n'
         strResult = strResult+'\t\t\t\tbreak;\n'
     return strResult   
 

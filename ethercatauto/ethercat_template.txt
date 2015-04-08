@@ -224,7 +224,7 @@ TOBJECT    OBJMEM GenObjDic[] = {
 
 /*PDO assign entry description*/
 OBJCONST TSDOINFOENTRYDESC    OBJMEM asPDOAssignEntryDesc[] = {
-   {DEFTYPE_UNSIGNED8, 0x08, ACCESS_READ|ACCESS_WRITE},
+   {DEFTYPE_UNSIGNED16, 0x10, ACCESS_READ|ACCESS_WRITE},
    {DEFTYPE_UNSIGNED16, 0x10, ACCESS_READ|ACCESS_WRITE}};
 
 
@@ -447,7 +447,7 @@ UINT16 Ethercat::APPL_GenerateMapping(UINT16* pInputSize,UINT16* pOutputSize)
 void Ethercat::APPL_InputMapping(UINT16* pData)
 {
     UINT16 j = 0;
-    UINT8 *pcData = (UINT8 *)pData;
+	UINT16 u16Temp;
 
 	for (j = 0; j < sTxPDOassign.u16SubIndex0; j++)
 	{
@@ -472,8 +472,7 @@ void Ethercat::APPL_OutputMapping(UINT16* pData)
 {
   
     UINT16 j = 0;
-    UINT8 *pcData = (UINT8 *)pData;
-
+	UINT16 u16Temp;
    for (j = 0; j < sRxPDOassign.u16SubIndex0; j++)
    {
       switch (sRxPDOassign.aEntries[j])
