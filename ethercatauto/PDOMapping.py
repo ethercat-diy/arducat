@@ -55,11 +55,12 @@ def GeneratePdoMapping(listSlaveInfo,rxtx,strEntryPrefix,strPdoObjPrefix):
         bitOffset = int(0)
         listMappingEntriesPost = []
         for dictMappingEntry in listMappingEntries:
-            #Align PDO mapping to byte
-            if bitOffset%8!=0 and dictMappingEntry['Length']<8 and (bitOffset%8+dictMappingEntry['Length']>8):
-                dictDummyEntry = {'Index':"0x0000",'SI':0,'Length':8-(bitOffset%8),'BitOffset':bitOffset}
+            #Align PDO mapping to word
+            if (bitOffset%16!=0) and (bitOffset%16+dictMappingEntry['Length']>16 or \
+                                    dictMappingEntry['Length']>=16) :
+                dictDummyEntry = {'Index':"0x0000",'SI':0,'Length':16-(bitOffset%16),'BitOffset':bitOffset}
                 dictPdoMappingPost[strPdoMappingObj].append(dictDummyEntry)
-                bitOffset = (bitOffset/8+1)*8
+                bitOffset = (bitOffset/16+1)*16
             #Add to bit Offset
             dictMappingEntry['BitOffset'] = bitOffset
             dictPdoMappingPost[strPdoMappingObj].append(dictMappingEntry)
@@ -84,7 +85,7 @@ def GeneratePdoMappingProg(listSlaveInfo,rxtx):
     elif rxtx=="tx":
         dictPdoMapping = GenerateTxPdoMapping(listSlaveInfo)
         cmdWordsCopy = '\t\t\t\t*(pData+%(WordOffset)d)'
-        cmdWordsCopy = cmdWordsCopy+' = *((UINT16*)&(%(strVarName)s)+%(WordOffset)d);\n'
+        cmdWordsCopy = cmdWordsCopy+' = *((UINT16*)&(%(strVarName)s)+%(intWord)d);\n'
         cmdMskShift = '\t\t\t\t*(pData+%(WordOffset)d) &= ~0x%(intMask)x;\n'
         cmdMskShift = cmdMskShift+'\t\t\t\tu16Temp = %(strVarName)s;\n'
         cmdMskShift = cmdMskShift+'\t\t\t\t*(pData+%(WordOffset)d) |= (u16Temp'
@@ -103,7 +104,7 @@ def GeneratePdoMappingProg(listSlaveInfo,rxtx):
             else:
                 strVarName = "Obj"+dictEntry['Index']+".SubIndex"\
                              +str(dictEntry['SI'])
-            #Copy bytes variables
+            #Copy word variables
             if dictEntry['Length'] >= 16:
                 for intWord in range(0,dictEntry['Length']/16):
                     strResult = strResult+cmdWordsCopy%{'strVarName':strVarName,\

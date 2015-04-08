@@ -234,14 +234,13 @@ OBJCONST TSDOINFOENTRYDESC    OBJMEM asPDOAssignEntryDesc[] = {
 ****************************************************/
 typedef struct OBJ_STRUCT_PACKED_START {
 	UINT16   u16SubIndex0;
-	UINT32   aEntries[8];
+	UINT32   aEntries[7];
 } OBJ_STRUCT_PACKED_END
 TOBJ0x1600;
 TOBJ0x1600 Obj0x1600 __attribute__ ((aligned (2)))
-={8, {0x70000120,0x70000220,0x70000320,0x70000420,0x70010103,0x70010201,0x00000004,0x70010305,}};
+={7, {0x70000120,0x70000220,0x70000320,0x70000420,0x70010103,0x70010201,0x70010305,}};
 OBJCONST TSDOINFOENTRYDESC OBJMEM asEntryDesc0x1600[] = {
 	{DEFTYPE_UNSIGNED16, 0x10, ACCESS_READ },
-	{DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ},
 	{DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ},
 	{DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ},
 	{DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ},
@@ -271,7 +270,7 @@ typedef struct OBJ_STRUCT_PACKED_START {
 } OBJ_STRUCT_PACKED_END
 TOBJ0x1A00;
 TOBJ0x1A00 Obj0x1A00 __attribute__ ((aligned (2)))
-={6, {0x60000108,0x60000220,0x60000303,0x60000401,0x00000004,0x60000505,}};
+={6, {0x60000108,0x00000008,0x60000220,0x60000303,0x60000401,0x60000505,}};
 OBJCONST TSDOINFOENTRYDESC OBJMEM asEntryDesc0x1A00[] = {
 	{DEFTYPE_UNSIGNED16, 0x10, ACCESS_READ },
 	{DEFTYPE_UNSIGNED32, 0x20, ACCESS_READ},
@@ -640,17 +639,17 @@ void Ethercat::APPL_InputMapping(UINT16* pData)
 				*(pData+0) &= ~0xff;
 				u16Temp = Obj0x6000.SubIndex1;
 				*(pData+0) |= (u16Temp<<(0))&0xff;
-				*(pData+0) = *((UINT16*)&(Obj0x6000.SubIndex2)+0);
-				*(pData+1) = *((UINT16*)&(Obj0x6000.SubIndex2)+1);
-				*(pData+2) &= ~0x700;
+				*(pData+1) = *((UINT16*)&(Obj0x6000.SubIndex2)+0);
+				*(pData+2) = *((UINT16*)&(Obj0x6000.SubIndex2)+1);
+				*(pData+3) &= ~0x7;
 				u16Temp = Obj0x6000.SubIndex3;
-				*(pData+2) |= (u16Temp<<(8))&0x700;
-				*(pData+2) &= ~0x800;
+				*(pData+3) |= (u16Temp<<(0))&0x7;
+				*(pData+3) &= ~0x8;
 				u16Temp = Obj0x6000.SubIndex4;
-				*(pData+2) |= (u16Temp<<(11))&0x800;
-				*(pData+3) &= ~0x1f;
+				*(pData+3) |= (u16Temp<<(3))&0x8;
+				*(pData+3) &= ~0x1f0;
 				u16Temp = Obj0x6000.SubIndex5;
-				*(pData+3) |= (u16Temp<<(0))&0x1f;
+				*(pData+3) |= (u16Temp<<(4))&0x1f0;
 				pData += 4;
 				break;
 			case 0x1A01:
@@ -692,7 +691,7 @@ void Ethercat::APPL_OutputMapping(UINT16* pData)
 				*((UINT16*)&(Obj0x7000.SubIndex4)+1) = *(pData+7);
 				Obj0x7001.SubIndex1 = (u16Temp&0x7)>>(0);
 				Obj0x7001.SubIndex2 = (u16Temp&0x8)>>(3);
-				Obj0x7001.SubIndex3 = (u16Temp&0x1f00)>>(8);
+				Obj0x7001.SubIndex3 = (u16Temp&0x1f0)>>(4);
 				pData += 9;
 				break;
 
