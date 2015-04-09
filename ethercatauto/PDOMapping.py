@@ -65,6 +65,10 @@ def GeneratePdoMapping(listSlaveInfo,rxtx,strEntryPrefix,strPdoObjPrefix):
             dictMappingEntry['BitOffset'] = bitOffset
             dictPdoMappingPost[strPdoMappingObj].append(dictMappingEntry)
             bitOffset = bitOffset+dictMappingEntry['Length']
+        if bitOffset%16!=0:
+            dictDummyEntry = {'Index':"0x0000",'SI':0,'Length':16-(bitOffset%16),'BitOffset':bitOffset}
+            dictPdoMappingPost[strPdoMappingObj].append(dictDummyEntry)
+            bitOffset = (bitOffset/16+1)*16
     dictPdoMapping = dictPdoMappingPost
     return dictPdoMapping
 	
@@ -81,7 +85,7 @@ def GeneratePdoMappingProg(listSlaveInfo,rxtx):
         cmdWordsCopy = '\t\t\t\t*((UINT16*)&(%(strVarName)s)+%(intWord)d)'
         cmdWordsCopy = cmdWordsCopy+' = *(pData+%(WordOffset)d);\n'
         cmdMskShift = '\t\t\t\tu16Temp = *(pData+%(WordOffset)d);\n'
-        cmdMskShift = '\t\t\t\t%(strVarName)s = (u16Temp&0x%(intMask)x)>>(%(intOffset)d);\n'
+        cmdMskShift = cmdMskShift+'\t\t\t\t%(strVarName)s = (u16Temp&0x%(intMask)x)>>(%(intOffset)d);\n'
     elif rxtx=="tx":
         dictPdoMapping = GenerateTxPdoMapping(listSlaveInfo)
         cmdWordsCopy = '\t\t\t\t*(pData+%(WordOffset)d)'
