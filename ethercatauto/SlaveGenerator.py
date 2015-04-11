@@ -1,4 +1,4 @@
-#!C:\Python27\python.exe
+
 strFileInput = "SSC-Device.xls"
 strFileCodeOutput = "ethercat.ino"
 strFileXmlOutput = "SlaveDevice.xml"
@@ -61,7 +61,11 @@ strFile = strFile%dictMapping
 f = open(strFileCodeOutput,'w')
 f.write(strFile)
 f.close()
-print strFileCodeOutput," generated"
+print 'Arduino code file "',strFileCodeOutput,'" generated.'
 
 XmlGenerator(strFileXmlOutput,dictSlaveInfo,listSlaveDict)
-print strFileXmlOutput," generated"
+print 'ESI file "',strFileXmlOutput,'" generated.'
+
+print "Press ENTER to continue..."
+input()
+
