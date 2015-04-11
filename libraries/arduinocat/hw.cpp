@@ -83,22 +83,12 @@ SYNC = PE7(INT7)
 ------
 -----------------------------------------------------------------------------------------*/
 
-//#define SPI1_SEL                        LPC_GPIO0
-//#define SPI1_IF                          ((LPC_SSP0->SR)&(1<<4)) //_SPI1IF
-//#define SPI1_BUF                        (LPC_SSP0->DR)
-//#define SPI1_CON0                        (LPC_SSP0->CR0)//SPI1CON1
-//#define SPI1_CON1                        (LPC_SSP0->CR1)//SPI1CON1
-//#define SPI1_STAT                        (LPC_SSP0->SR)//SPI1STAT
-//#define SPI1_CPSR						 (LPC_SSP0->CPSR)//added
 #define    WAIT_SPI_IF                        //spi.end();//while( SPI1_IF );//while( !SPI1_IF );
 #define    SELECT_SPI                      PORTH &= ~(1<<2);//digitalWrite(15, LOW);//{(LPC_GPIO3->DATA) &= ~(SPI_ACTIVE);}
 #define    DESELECT_SPI                    PORTH |= (1<<2);//digitalWrite(15, HIGH);//{(LPC_GPIO3->DATA) |= (SPI_DEACTIVE);}
 #define    INIT_SSPIF                        //{(SPI1_IF)=0;}
-//#define SPI1_STAT_VALUE                    0x8000
 #define SPI1_CON0_VALUE                    	0x000000C7//0x027E
 #define SPI1_CON0_VALUE_16BIT            	0x000000CF//0x047E
-//#define SPI1_CON0_VALUE                    	0x00000047//0x027E
-//#define SPI1_CON0_VALUE_16BIT            	0x0000004F//0x047E
 #define SPI1_CON1_VALUE                    	0x00000002//Write at end
 #define SPI1_CPSR_VALUE                    	0x00000002//Write at end
 #define SPI_DEACTIVE                    (1<<4)
@@ -111,8 +101,8 @@ SYNC = PE7(INT7)
 ------
 -----------------------------------------------------------------------------------------*/
 
-#define DISABLE_GLOBAL_INT           noInterrupts(); //__disable_irq(); //set CPU priority to level 4 (disable interrupt level 1 - 4)
-#define ENABLE_GLOBAL_INT            interrupts();//__enable_irq();
+#define DISABLE_GLOBAL_INT           noInterrupts();
+#define ENABLE_GLOBAL_INT            interrupts();
 #define    DISABLE_AL_EVENT_INT        DISABLE_GLOBAL_INT
 #define    ENABLE_AL_EVENT_INT            ENABLE_GLOBAL_INT
 
@@ -123,7 +113,7 @@ SYNC = PE7(INT7)
 ------
 -----------------------------------------------------------------------------------------*/
 
-#define	   INIT_ESC_INT		attachInterrupt(6,SIRQ_IRQHandler,FALLING );//{(LPC_GPIO3->IS)|=(1<<5);(LPC_GPIO3->IEV)&=~(1<<5);NVIC_EnableIRQ(EINT3_IRQn);}
+#define	   INIT_ESC_INT		attachInterrupt(6,SIRQ_IRQHandler,FALLING );
 
 
 
@@ -144,18 +134,12 @@ SYNC = PE7(INT7)
 -----------------------------------------------------------------------------------------*/
 
 
-//#define INIT_ECAT_TIMER                {(LPC_TMR32B0->MR0) = 800;/*set period  original=312.5Hz*/ \//LPC1114 IRC=12MHz,LPC1751=4MHz
 #define INIT_ECAT_TIMER                
-//{(LPC_TMR32B0->MR0) = 2400;/*set period  original=312.5Hz*/ \
-//    (LPC_TMR32B0->MCR) = 0x02;/*timer mode*/ \
-//    (LPC_TMR32B0->PR) = 0;/*timer mode*/ \
-//    (LPC_TMR32B0->CTCR) = 0;/*timer mode*/ \
-//    (LPC_TMR32B0->TC) = 0;/*clear timer register*/}
 
 
-#define STOP_ECAT_TIMER              //  {(LPC_TMR32B0->TCR) = 0; /*disable timer*/}
+#define STOP_ECAT_TIMER 
 
-#define START_ECAT_TIMER            //{(LPC_TMR32B0->TCR) = 1; /*enable timer*/}
+#define START_ECAT_TIMER 
 
 
 
@@ -189,53 +173,20 @@ void Ethercat::GetInterruptRegister(void)
     /* select the SPI */
     SELECT_SPI;
 
-    /* reset transmission flag */
-    //SPI1_IF=0;
-
     /* there have to be at least 15 ns after the SPI1_SEL signal was active (0) before
        the transmission shall be started */
     /* write to SPI1_BUF register starts the SPI access*/
 	EscALEvent.Byte[0] = SPI.transfer((UINT8) (0x0000 >> 5));
     //SPI1_BUF = (UINT8) (0x0000 >> 5);
 
-    /* SPI is busy */
-   // WAIT_SPI_IF
-
-    /* get first byte of AL Event register */
-
-//    EscALEvent.Byte[0] = SPI1_BUF;
-
-    /* reset SPI interrupt flag */
-    //SPI1_IF = 0;
-
     /* write to SPI1_BUF register starts the SPI access
        read the sm mailbox read ecatenable byte */
 	EscALEvent.Byte[1] = SPI.transfer((UINT8) (((0x0000 & 0x1F) << 3) | ESC_RD));
  
- //SPI1_BUF = (UINT8) (((0x0000 & 0x1F) << 3) | ESC_RD);
-    /* write to SPI1_BUF register starts the SPI access */
-
-    //WAIT_SPI_IF
-    /* get first byte of AL Event register */
-
- //   EscALEvent.Byte[1] = SPI1_BUF;
-
-    /* reset SPI interrupt flag */
-    //SPI1_IF = 0;
-    /* if the SPI transmission rate is higher than 15 MBaud, the Busy detection shall be
-       done here */
-
     /* write to SPI1_BUF register starts the SPI access
        read the sm mailbox read ecatenable byte (last byte) */
 	EscMbxReadEcatCtrl = SPI.transfer(0xFF);
 
-	  // SPI1_BUF = 0xFF;
-    /* write to SPI1_BUF register starts the SPI access */
-    //WAIT_SPI_IF
-    /* get first byte of AL Event register */
-    //EscMbxReadEcatCtrl = SPI1_BUF;
-    /* reset SPI interrupt flag */
-    //SPI1_IF = 0;
     /* there has to be at least 15 ns + CLK/2 after the transmission is finished
        before the SPI1_SEL signal shall be 1 */
 
@@ -259,35 +210,17 @@ void Ethercat::ISR_GetInterruptRegister(void)
 
     /* select the SPI */
     SELECT_SPI;
-    /* reset transmission flag */
-//    SPI1_IF=0;
-
     /* there have to be at least 15 ns after the SPI1_SEL signal was active (0) before
        the transmission shall be started */
     /* write to SPI1_BUF register starts the SPI access,
        read the sm mailbox read ecatenable byte
        (has to be synchronous to the al event flags) */
     EscALEvent.Byte[0] = SPI.transfer(0);
-	//SPI1_BUF = 0;
-    /* SPI is busy */
-    //WAIT_SPI_IF
-
     /* get first byte of AL Event register */
     //EscALEvent.Byte[0] = SPI1_BUF;
-    /* reset SPI interrupt flag */
-//    SPI1_IF = 0;
-
     /* write to SPI1_BUF register starts the SPI access
        send NOP command */
     EscALEvent.Byte[1] = SPI.transfer(0);
-	//SPI1_BUF = 0;
-    /* write to SPI1_BUF register starts the SPI access */
-    //WAIT_SPI_IF
-
-    /* get first byte of AL Event register */
-    //EscALEvent.Byte[1] = SPI1_BUF;
-    /* reset SPI interrupt flag */
-//    SPI1_IF = 0;
 
     /* if the SPI transmission rate is higher than 15 MBaud, the Busy detection shall be
        done here */
@@ -312,34 +245,12 @@ void Ethercat::AddressingEsc( UINT16 Address, UINT8 Command )
     SELECT_SPI;
 
     /* reset transmission flag */
-//    SPI1_IF=0;
-    //???dummy = SPI1_BUF;
     /* there have to be at least 15 ns after the SPI1_SEL signal was active (0) before
        the transmission shall be started */
     /* send the first address/command byte to the ESC */
     EscALEvent.Byte[0] = SPI.transfer(tmp.Byte[1]);    
-	//SPI1_BUF = tmp.Byte[1];
-    /* wait until the transmission of the byte is finished */
-    //WAIT_SPI_IF
-    /* get first byte of AL Event register */
-
-    //EscALEvent.Byte[0] = SPI1_BUF;
-
-    /* reset transmission flag */
-//    SPI1_IF=0;
-    //?dummy = SPI1_BUF;
     /* send the second address/command byte to the ESC */
     EscALEvent.Byte[1] = SPI.transfer(tmp.Byte[0]); 
-
-	//SPI1_BUF = tmp.Byte[0];
-    /* wait until the transmission of the byte is finished */
-    //WAIT_SPI_IF
-    /* get second byte of AL Event register */
-
-    //EscALEvent.Byte[1] = SPI1_BUF;
-
-    /* reset transmission flag */
-//    SPI1_IF = 0;
 
     /* if the SPI transmission rate is higher than 15 MBaud, the Busy detection shall be
        done here */
@@ -362,30 +273,12 @@ void Ethercat::ISR_AddressingEsc( UINT16 Address, UINT8 Command )
     /* select the SPI */
     SELECT_SPI;
 
-    /* reset transmission flag */
-//    SPI1_IF=0;
-
     /* there have to be at least 15 ns after the SPI1_SEL signal was active (0) before
        the transmission shall be started */
     /* send the first address/command byte to the ESC */
     dummy = SPI.transfer(tmp.Byte[1]); 
-	//SPI1_BUF = tmp.Byte[1];
-    /* wait until the transmission of the byte is finished */
-    //WAIT_SPI_IF
-    //dummy = SPI1_BUF;
-    /* reset transmission flag */
-//    SPI1_IF=0;
-
     /* send the second address/command byte to the ESC */
     dummy = SPI.transfer(tmp.Byte[0]);  
-	//SPI1_BUF = tmp.Byte[0];
-    /* wait until the transmission of the byte is finished */
-    //WAIT_SPI_IF
-    //dummy = SPI1_BUF;
-
-    /* reset transmission flag */
-//    SPI1_IF = 0;
-
     /* if the SPI transmission rate is higher than 15 MBaud, the Busy detection shall be
        done here */
 }
@@ -408,75 +301,15 @@ UINT8 Ethercat::HW_Init(void)
 {
     UINT16 intMask;
 
-	//Interrupt piority
-	//NVIC_SetPriority(TIMER_16_0_IRQn, 0);  //Sampling has the highest
-	//NVIC_SetPriority(EINT1_IRQn, 3);	   
-	//NVIC_SetPriority(EINT3_IRQn, 3);
-
-	//Power control
-	//LPC_SYSCON->SYSAHBCLKCTRL = 0x00010A5F;
-
-    //PORT_CFG;
 	SPI.begin();
-	//LPC_IOCON->PIO0_9 = 0x01;	//MOSI0
-	//LPC_IOCON->PIO0_8 = 0x01;	//MISO0
-	//LPC_IOCON->PIO0_6 = 0x02;	//SCK0
-	//LPC_IOCON->SCK_LOC = 0x02;	//SCK@P0.6
-	//*****LPC_GPIO3->DIR |= 1<<4;
-
       /* initialize the SPI registers for the ESC SPI */
 	SPI.setClockDivider(SPI_CLOCK_DIV8);
-	//LPC_SYSCON->PRESETCTRL |= 0x01;
-	//LPC_SYSCON->SSP0CLKDIV = 0x01;
-	//SPI1_CPSR = SPI1_CPSR_VALUE;
 	SPI.setBitOrder(MSBFIRST); 
 	SPI.setDataMode(SPI_MODE3);	//CPOL=CPHA=1
-	//SPI1_CON0 = SPI1_CON0_VALUE;
-    //SPI1_CON1 = SPI1_CON1_VALUE;
 	//Initial SSEL pin 
 	PORTH |= (1<<2);
 	DDRH |= (1<<2);
 	
-    //PORT_CFG;
-/*	LPC_IOCON->R_PIO1_0 = (1<<7)|0x01;	//Dig|GPIO
-	LPC_IOCON->R_PIO1_1 = (1<<7)|0x01;	//Dig|GPIO
-	LPC_IOCON->R_PIO1_2 = (1<<7)|0x01;	//Dig|GPIO
-*/	//LED DI
-/*	LPC_GPIO1->DIR |= (1<<6);
-	LPC_GPIO1->DIR |= (1<<7);
-	LPC_GPIO3->DIR |= (1<<3);
-	LPC_GPIO2->DIR |= (1<<6);
-	//LED DO
-	LPC_GPIO1->DIR |= (1<<8);
-	LPC_GPIO0->DIR |= (1<<2);
-	LPC_GPIO2->DIR |= (1<<7);
-	LPC_GPIO2->DIR |= (1<<8);
-	//Port DO
-	LPC_GPIO1->DIR |= (1<<0);
-	LPC_GPIO1->DIR |= (1<<10);
-	LPC_GPIO2->DIR |= (1<<2);
-	LPC_GPIO2->DIR |= (1<<1);
-	//Port DI
-	LPC_IOCON->PIO1_4 &= ~(3<<3);
-	LPC_IOCON->PIO2_3 &= ~(3<<3);
-	LPC_IOCON->R_PIO1_1 &= ~(3<<3);
-	LPC_IOCON->R_PIO1_2 &= ~(3<<3);
-	LPC_IOCON->PIO1_4 |= (1<<5);
-	LPC_IOCON->PIO2_3 |= (1<<5);
-	LPC_IOCON->R_PIO1_1 |= (1<<5);
-	LPC_IOCON->R_PIO1_2 |= (1<<5);
-*/
-	//Timer for 100ms period
-/*	LPC_SYSCON->SYSAHBCLKCTRL |= (1<<7);
-	LPC_TMR16B0->IR |= 0x01;	//Channel 0
-	LPC_TMR16B0-> TC = 0;		//Initial counter value = 0
-	LPC_TMR16B0-> PR = 0x0;		//Precale period = 1
-	LPC_TMR16B0-> PC = 0x0;		//Prescale initial = 0
-	LPC_TMR16B0-> MCR = 0x03;	//Interrupt, reset, continue on Match 0
-	LPC_TMR16B0-> MR0 = 1200;     //System prescaled = 1, sysclk=12MHz, period = 100us
-	LPC_TMR16B0->TCR = 0x01;	//Enable
-	LPC_GPIO3->DIR |= 1<<2;		//Timer Indicator
-*/
     do
     {
         intMask = 0x93;
@@ -618,11 +451,6 @@ void Ethercat::HW_EscRead( MEM_ADDR *pData, UINT16 Address, UINT16 Len )
 
         /* when reading the last byte the DI pin shall be 1 */
 		*pTmpData++ = SPI.transfer(0xFF); 
-        //SPI1_BUF = 0xFF;
-        /* wait until transmission finished */
-        //WAIT_SPI_IF
-        /* get data byte */
-        //*pTmpData++ = SPI1_BUF;
         /* enable the ESC interrupt to get the AL Event ISR the chance to interrupt,
            if the next byte is the last the transmission shall not be interrupted,
            otherwise a sync manager could unlock the buffer, because the last was
@@ -634,10 +462,6 @@ void Ethercat::HW_EscRead( MEM_ADDR *pData, UINT16 Address, UINT16 Len )
         /* next address */
         Address++;
         /* reset transmission flag */
-//        SPI1_IF = 0;
-
-
-
     }
 }
 
@@ -667,19 +491,10 @@ void Ethercat::HW_EscReadIsr( MEM_ADDR *pData, UINT16 Address, UINT16 Len )
             /* when reading the last byte the DI pin shall be 1 */
             data = 0xFF;
         }
-        /* reset transmission flag */
-//        SPI1_IF = 0;
 
         /* start transmission */
 		*pTmpData++ = SPI.transfer(data); 
-        //SPI1_BUF = data;
-        /* wait until transmission finished */
-        //WAIT_SPI_IF
-        /* get data byte */
-        //*pTmpData++ = SPI1_BUF;
     }
-    /* reset transmission flag */
-//    SPI1_IF = 0;
 
     /* there has to be at least 15 ns + CLK/2 after the transmission is finished
        before the SPI1_SEL signal shall be 1 */
@@ -711,12 +526,6 @@ void Ethercat::HW_EscWrite( MEM_ADDR *pData, UINT16 Address, UINT16 Len )
          AddressingEsc( Address, ESC_WR );
         /* start transmission */
         dummy = SPI.transfer(*pTmpData++); 
-		//SPI1_BUF = *pTmpData++;
-        /* wait until transmission finished */
-        //WAIT_SPI_IF
-        /* enable the ESC interrupt to get the AL Event ISR the chance to interrupt */
-        /* SPI1_BUF must be read, otherwise the module will not transfer the next received data from SPIxSR to SPIxRXB.*/
-        //dummy = SPI1_BUF;
         ENABLE_AL_EVENT_INT;
         /* there has to be at least 15 ns + CLK/2 after the transmission is finished
            before the SPI1_SEL signal shall be 1 */
@@ -724,8 +533,6 @@ void Ethercat::HW_EscWrite( MEM_ADDR *pData, UINT16 Address, UINT16 Len )
         DESELECT_SPI;
         /* next address */
         Address++;
-        /* reset transmission flag */
-//        SPI1_IF = 0;
 
     }
 }
@@ -750,21 +557,11 @@ void Ethercat::HW_EscWriteIsr( MEM_ADDR *pData, UINT16 Address, UINT16 Len )
     /* loop for all bytes to be written */
     while ( i-- > 0 )
     {
-        /* reset transmission flag */
-//        SPI1_IF = 0;
-
         /* start transmission */
         dummy = SPI.transfer(*pTmpData);
-		//SPI1_BUF = *pTmpData;
-        /* wait until transmission finished */
-        //WAIT_SPI_IF
-        /* increment data pointer */
-        //dummy = SPI1_BUF;
 
         pTmpData++;
     }
-    /* reset transmission flag */
-//    SPI1_IF = 0;
 
     /* there has to be at least 15 ns + CLK/2 after the transmission is finished
        before the SPI1_SEL signal shall be 1 */
@@ -844,51 +641,14 @@ TSYNCMAN ESCMEM * Ethercat::HW_GetSyncMan(UINT8 channel)
 //void __attribute__ ((__interrupt__, no_auto_psv)) EscIsr & SYNC0(void)
 void SIRQ_IRQHandler()
 {
-		//LPC_GPIO3->IC = (1 << 5);     /* clear pending interrupt         */
     	ethercat.PDI_Isr();
 }
 void SYNC_IRQHandler()
 {
-		//LPC_GPIO1->IC = (1 << 9);     /* clear pending interrupt         */
     	ethercat.Sync0_Isr();
 }
 
-/*extern int mutexSample = 0;
-int ledCount = 0;
-void TIMER16_0_IRQHandler()
-{
-	//clear pending interrupt
-	LPC_TMR16B0->IR = 0x01;		
-	//Sampling led
-	ledCount++;
-	if(ledCount>=5000)
-	{
-		LPC_GPIO3->DATA ^= (1<<2);
-		ledCount = 0;
-	}
-	//Hardware RW
-	hwRW();
-}
-*/
 
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////////
-/**
- \brief    Interrupt service routine for the interrupts from SYNC0
-*////////////////////////////////////////////////////////////////////////////////////////
-//void __attribute__((__interrupt__, no_auto_psv)) Sync0Isr(void)
-/*void EINT0_IRQHandler()
-{
-	LPC_GPIOINT->IO0IntClr |= (0 << 22);    
-    Sync0_Isr();
-    //ACK_SYNC0_INT;
-
-}
-*/
-
-/** @} */
 
 
 

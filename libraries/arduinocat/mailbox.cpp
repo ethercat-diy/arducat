@@ -384,18 +384,6 @@ UINT8 Ethercat::MailboxServiceInd(TMBX MBXMEM *pMbx)
         break;
     }
 	
-	Serial.print("Mailbox=");
-	Serial.print(*((UINT16*)(&pMbx->MbxHeader)+0),HEX);//MailboxHeader
-	Serial.print(",");
-	Serial.print(*((UINT16*)(&pMbx->MbxHeader)+1),HEX);
-	Serial.print(",");
-	Serial.print(*((UINT16*)(&pMbx->MbxHeader)+2),HEX);
-	Serial.print(",");
-	Serial.print(*((UINT16*)(&pMbx->MbxHeader)+3),HEX);
-	Serial.print(",");
-	Serial.print(*((UINT16*)(&pMbx->MbxHeader)+4),HEX);
-	Serial.print(",");
-	Serial.println(*((UINT16*)(&pMbx->MbxHeader)+5),HEX);//CoeHeader
 	//cx leakage?
 	if(pMbx)
 		APPL_FreeMailboxBuffer(pMbx);

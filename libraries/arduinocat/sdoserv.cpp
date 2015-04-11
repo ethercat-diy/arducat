@@ -557,8 +557,6 @@ UINT8 Ethercat::SDOS_SdoInd(TINITSDOMBX MBXMEM *pSdoInd)
         index = pSdoInd->SdoHeader.Sdo[SDOHEADER_INDEXHIOFFSET] & SDOHEADER_INDEXHIMASK;
         index <<= 8;
         index += pSdoInd->SdoHeader.Sdo[SDOHEADER_INDEXLOOFFSET] >> SDOHEADER_INDEXLOSHIFT;
-	Serial.print("index=");
-	Serial.println(index,HEX);
         /* the variable subindex contains the requested subindex of the SDO service */
         subindex    = pSdoInd->SdoHeader.Sdo[SDOHEADER_SUBINDEXOFFSET] >> SDOHEADER_SUBINDEXSHIFT;
 
