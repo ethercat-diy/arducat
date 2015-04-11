@@ -1,4 +1,6 @@
 *.pyc
+*.ino
+*.xml
 /
 
 !libraries/arduinocat/
