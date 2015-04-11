@@ -1,0 +1,3 @@
+-i SSC-Device.xls
+-c ethercat.ino
+-x C:\TwinCAT\Io\EtherCAT\SlaveDevice.xml
