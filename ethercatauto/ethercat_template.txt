@@ -1,7 +1,22 @@
-#include "objdef.h"
-
+/////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
+/**
+The application code (editable area) is at the end of this file.
+This area is the Ethercat slave stack code. DO NOT EDIT!!!
+**/
+/////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
+#include <ecatappl.h>
+#include <ecatcoe.h>
+#include <ecatslv.h>
+#include <ecat_def.h>
+#include <esc.h>
+#include <ethercat.h>
+#include <mailbox.h>
+#include <objdef.h>
+#include <sdoserv.h>
+#include <SPI.h>
 #define DEBUG_OVER_SERIAL
-
 const UINT32 VENDOR_ID = %(Vendor ID)s;
 UINT32 PRODUCT_CODE = %(Product Code)s;
 UINT32 REVISION_NUMBER = %(Revision Number)s;
@@ -296,8 +311,7 @@ UINT16 Ethercat::APPL_StopMailboxHandler(void)
 
 UINT16 Ethercat::APPL_StartInputHandler(UINT16 *pIntMask)
 {
-	//cx
-	//NVIC_EnableIRQ(TIMER_16_0_IRQn);
+
     return ALSTATUSCODE_NOERROR;
 }
 
@@ -314,8 +328,6 @@ UINT16 Ethercat::APPL_StartInputHandler(UINT16 *pIntMask)
 
 UINT16 Ethercat::APPL_StopInputHandler(void)
 {
-	//NVIC_DisableIRQ(TIMER_16_0_IRQn);
-	//LPC_GPIO3->DATA |= (1<<2);
     return ALSTATUSCODE_NOERROR;
 }
 
@@ -484,6 +496,15 @@ void Ethercat::APPL_OutputMapping(UINT16* pData)
    }
 }
 
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
+/**
+Above is the Ethercat slave stack code. DO NOT EDIT!!!
+Application code goes below (editable)
+**/
+/////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
 /**
 \brief    This function will called from the synchronisation ISR 
@@ -491,5 +512,32 @@ void Ethercat::APPL_OutputMapping(UINT16* pData)
 *////////////////////////////////////////////////////////////////////////////////////////
 void Ethercat::APPL_Application(void)
 {
+	//TODO::Add application code here
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+/**
+\brief    Arduino setup function
+*////////////////////////////////////////////////////////////////////////////////////////
+
+void setup() {
+	Serial.begin(115200);
+	ethercat.HW_Init();
+	ethercat.MainInit();
+	Serial.println("EtherCAT slave setup finished.");
+	//TODO::Add application code here
+
+  }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+/**
+\brief    Arduino loop function
+*////////////////////////////////////////////////////////////////////////////////////////
+
+// the loop function runs over and over again forever
+void loop() {
+	ethercat.MainLoop();
+	//TODO::Add application code here
+	delayMicroseconds(100);            //Do not add too long delay, or CoE of EtherCAT may overtime. 
 }
 
