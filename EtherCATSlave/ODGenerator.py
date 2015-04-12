@@ -176,6 +176,8 @@ def ODGenerator(listSlaveInfo):
             for intSI in range(1,int(dictItem['Entry'][0]['Default'])+1):
                 strVarDecl = strVarDecl+"\t"+ dictEthercatType[dictItem['Entry'][1]['DataType']][0]\
                              +' '+"SubIndex"+str(intSI)
+                if dictEthercatType[dictItem['Entry'][1]['DataType']][2]<16:
+                    strVarDecl = strVarDecl+':'+str(dictEthercatType[dictItem['Entry'][1]['DataType']][2])
                 if intSI==1 or dictEthercatType[dictItem['Entry'][1]['DataType']][2]>=16:
                     strVarDecl = strVarDecl+' __attribute__ ((aligned (2)))'
                 strVarDecl = strVarDecl+';\n'
