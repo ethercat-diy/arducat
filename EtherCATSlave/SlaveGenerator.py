@@ -67,5 +67,4 @@ XmlGenerator(strFileXmlOutput,dictSlaveInfo,listSlaveDict)
 print 'ESI file "',strFileXmlOutput,'" generated.'
 
 print "Press ENTER to continue..."
-input()
-
+raw_input()
