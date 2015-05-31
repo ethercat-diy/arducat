@@ -203,6 +203,67 @@ void SPIWriteDWord (UINT16 Address, UINT32 Val)
     DESELECT_SPI;
 }
 
+#define ESC_CSR_CMD_REG		0x304
+#define ESC_CSR_DATA_REG	0x300
+#define ESC_WRITE_BYTE 		0x80
+#define ESC_READ_BYTE 		0xC0
+#define ESC_CSR_BUSY		0x80
+void SPIReadDRegister(UINT8 *ReadBuffer, UINT16 Address, UINT8 Count)
+{
+    UINT32 param32_1 = 0;
+    UINT8 i = 0;
+    UINT16 wAddr = Address;
+
+    *((UINT8*)&param32_1+0) = *((UINT8*)&wAddr+0);
+    *((UINT8*)&param32_1+1) = *((UINT8*)&wAddr+1);
+    *((UINT8*)&param32_1+2) = Count;
+    *((UINT8*)&param32_1+3) = ESC_READ_BYTE;
+
+    SPIWriteDWord (ESC_CSR_CMD_REG, param32_1);
+
+    do
+    {
+	param32_1 = SPIReadDWord (ESC_CSR_CMD_REG);
+		
+    }while(*((UINT8*)&param32_1+3) & ESC_CSR_BUSY);
+
+    param32_1 = SPIReadDWord (ESC_CSR_DATA_REG);
+
+    
+    for(i=0;i<Count;i++)
+         ReadBuffer[i] = *((UINT8*)&param32_1+i);
+   
+    return;
+}
+void SPIWriteRegister( UINT8 *WriteBuffer, UINT16 Address, UINT8 Count)
+{
+    UINT32 param32_1 = 0;
+    UINT8 i = 0;
+    UINT16 wAddr;
+
+    for(i=0;i<Count;i++)
+         *((UINT8*)&param32_1+i) = WriteBuffer[i];
+
+    SPIWriteDWord (ESC_CSR_DATA_REG, param32_1);
+
+
+    wAddr = Address;
+
+    *((UINT8*)&param32_1+0) = *((UINT8*)&wAddr+0);
+    *((UINT8*)&param32_1+1) = *((UINT8*)&wAddr+1);
+    *((UINT8*)&param32_1+2) = Count;
+    *((UINT8*)&param32_1+3) = ESC_WRITE_BYTE;
+
+    SPIWriteDWord (0x304, param32_1);
+    do
+    {
+	param32_1 = SPIReadDWord (0x304);
+
+    }while(*((UINT8*)&param32_1+3) & ESC_CSR_BUSY);
+
+    return;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////
 /**
  \brief  The function operates a SPI access without addressing.
