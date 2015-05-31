@@ -405,6 +405,7 @@ void Ethercat::ISR_AddressingEsc( UINT16 Address, UINT8 Command )
 UINT8 Ethercat::HW_Init(void)
 {
     UINT16 intMask;
+	UINT32 data;
 	//Initial SSEL pin 
 	PORTH &= ~(1<<2);
 	DDRH |= (1<<2);
@@ -428,6 +429,16 @@ UINT8 Ethercat::HW_Init(void)
     INIT_ESC_INT
     HW_ResetALEventMask(0);
     ENABLE_ESC_INT();
+
+    //IRQ enable,IRQ polarity, IRQ buffer type in Interrupt Configuration register.
+    //Wrte 0x54 - 0x00000111
+    data = 0x00000101;
+    SPIWriteDWord (0x54, data);
+    //Write in Interrupt Enable register -->
+    //Write 0x5c - 0x00000001
+    data = 0x00000001;
+    SPIWriteDWord (0x5C, data);
+    SPIReadDWord(0x58);
 
     INIT_SYNC0_INT
     ENABLE_SYNC0_INT;
