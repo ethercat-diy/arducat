@@ -159,6 +159,50 @@ SYNC = PE7(INT7)
 --------------------------------------------------------------------------------------*/
 void SIRQ_IRQHandler();
 void SYNC_IRQHandler();
+
+#define CMD_SERIAL_WRITE 0x02
+#define CMD_SERIAL_READ 0x03
+
+UINT32 SPIReadDWord (UINT16 Address)
+{
+	UINT32 Val;
+    //Assert CS line
+    SELECT_SPI;
+    //Write Command
+    SPI.transfer(CMD_SERIAL_READ);
+    //Write Address
+    SPI.transfer(*((UINT8*)&Address+1));
+    SPI.transfer(*((UINT8*)&Address+0));
+    //Read Bytes
+    *((UINT8*)&Val+0) = SPI.transfer(0xFF);
+    *((UINT8*)&Val+1) = SPI.transfer(0xFF);
+    *((UINT8*)&Val+2) = SPI.transfer(0xFF);
+    *((UINT8*)&Val+3) = SPI.transfer(0xFF);
+    //De-Assert CS line
+    DESELECT_SPI;
+   
+    return Val;
+}
+
+void SPIWriteDWord (UINT16 Address, UINT32 Val)
+{
+    //Assert CS line
+    SELECT_SPI;
+    //Write Command
+    SPI.transfer(CMD_SERIAL_WRITE);
+    //Write Address
+    SPI.transfer(*((UINT8*)&Address+1));
+    SPI.transfer(*((UINT8*)&Address+0));
+    //Write Bytes
+    SPI.transfer(*((UINT8*)&Val+0));
+    SPI.transfer(*((UINT8*)&Val+1));
+    SPI.transfer(*((UINT8*)&Val+2));
+    SPI.transfer(*((UINT8*)&Val+3));
+
+    //De-Assert CS line
+    DESELECT_SPI;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////
 /**
  \brief  The function operates a SPI access without addressing.
@@ -300,15 +344,17 @@ void Ethercat::ISR_AddressingEsc( UINT16 Address, UINT8 Command )
 UINT8 Ethercat::HW_Init(void)
 {
     UINT16 intMask;
-
+	//Initial SSEL pin 
+	PORTH &= ~(1<<2);
+	DDRH |= (1<<2);
+	//Initial SPI
 	SPI.begin();
       /* initialize the SPI registers for the ESC SPI */
 	SPI.setClockDivider(SPI_CLOCK_DIV8);
 	SPI.setBitOrder(MSBFIRST); 
 	SPI.setDataMode(SPI_MODE3);	//CPOL=CPHA=1
-	//Initial SSEL pin 
+	//Initialize with a rising edge
 	PORTH |= (1<<2);
-	DDRH |= (1<<2);
 	
     do
     {
