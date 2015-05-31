@@ -273,31 +273,9 @@ void SPIWriteRegister( UINT8 *WriteBuffer, UINT16 Address, UINT8 Count)
 *////////////////////////////////////////////////////////////////////////////////////////
 void Ethercat::GetInterruptRegister(void)
 {
-    UINT8            EscMbxReadEcatCtrl;
-    DISABLE_AL_EVENT_INT;
-    /* select the SPI */
-    SELECT_SPI;
-
-    /* there have to be at least 15 ns after the SPI1_SEL signal was active (0) before
-       the transmission shall be started */
-    /* write to SPI1_BUF register starts the SPI access*/
-	EscALEvent.Byte[0] = SPI.transfer((UINT8) (0x0000 >> 5));
-    //SPI1_BUF = (UINT8) (0x0000 >> 5);
-
-    /* write to SPI1_BUF register starts the SPI access
-       read the sm mailbox read ecatenable byte */
-	EscALEvent.Byte[1] = SPI.transfer((UINT8) (((0x0000 & 0x1F) << 3) | ESC_RD));
- 
-    /* write to SPI1_BUF register starts the SPI access
-       read the sm mailbox read ecatenable byte (last byte) */
-	EscMbxReadEcatCtrl = SPI.transfer(0xFF);
-
-    /* there has to be at least 15 ns + CLK/2 after the transmission is finished
-       before the SPI1_SEL signal shall be 1 */
-
-    DESELECT_SPI;
-
-    ENABLE_AL_EVENT_INT;
+      DISABLE_AL_EVENT_INT;
+      HW_EscReadIsr(&EscALEvent.Word, 0x220, 2);
+      ENABLE_AL_EVENT_INT;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -310,85 +288,10 @@ void Ethercat::GetInterruptRegister(void)
 *////////////////////////////////////////////////////////////////////////////////////////
 void Ethercat::ISR_GetInterruptRegister(void)
 {
-    /* SPI should be deactivated to interrupt a possible transmission */
-    DESELECT_SPI;
-
-    /* select the SPI */
-    SELECT_SPI;
-    /* there have to be at least 15 ns after the SPI1_SEL signal was active (0) before
-       the transmission shall be started */
-    /* write to SPI1_BUF register starts the SPI access,
-       read the sm mailbox read ecatenable byte
-       (has to be synchronous to the al event flags) */
-    EscALEvent.Byte[0] = SPI.transfer(0);
-    /* get first byte of AL Event register */
-    //EscALEvent.Byte[0] = SPI1_BUF;
-    /* write to SPI1_BUF register starts the SPI access
-       send NOP command */
-    EscALEvent.Byte[1] = SPI.transfer(0);
-
-    /* if the SPI transmission rate is higher than 15 MBaud, the Busy detection shall be
-       done here */
-
-    DESELECT_SPI;
+     HW_EscReadIsr(&EscALEvent.Word, 0x220, 2);
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////////
-/**
- \param Address     EtherCAT ASIC address ( upper limit is 0x1FFF )    for access.
- \param Command    ESC_WR performs a write access; ESC_RD performs a read access.
-
- \brief The function addresses the EtherCAT ASIC via SPI for a following SPI access.
-*////////////////////////////////////////////////////////////////////////////////////////
-void Ethercat::AddressingEsc( UINT16 Address, UINT8 Command )
-{
-    UBYTETOWORD tmp;
-    VARVOLATILE UINT8 dummy;
-    tmp.Word = ( Address << 3 ) | Command;
-    /* select the SPI */
-    SELECT_SPI;
-
-    /* reset transmission flag */
-    /* there have to be at least 15 ns after the SPI1_SEL signal was active (0) before
-       the transmission shall be started */
-    /* send the first address/command byte to the ESC */
-    EscALEvent.Byte[0] = SPI.transfer(tmp.Byte[1]);    
-    /* send the second address/command byte to the ESC */
-    EscALEvent.Byte[1] = SPI.transfer(tmp.Byte[0]); 
-
-    /* if the SPI transmission rate is higher than 15 MBaud, the Busy detection shall be
-       done here */
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-/**
- \param Address     EtherCAT ASIC address ( upper limit is 0x1FFF )    for access.
- \param Command    ESC_WR performs a write access; ESC_RD performs a read access.
-
- \brief The function addresses the EtherCAT ASIC via SPI for a following SPI access.
-        Shall be implemented if interrupts are supported else this function is equal to "AddressingEsc()"
-*////////////////////////////////////////////////////////////////////////////////////////
-void Ethercat::ISR_AddressingEsc( UINT16 Address, UINT8 Command )
-{
-    VARVOLATILE UINT8 dummy;
-    UBYTETOWORD tmp;
-    tmp.Word = ( Address << 3 ) | Command;
-
-    /* select the SPI */
-    SELECT_SPI;
-
-    /* there have to be at least 15 ns after the SPI1_SEL signal was active (0) before
-       the transmission shall be started */
-    /* send the first address/command byte to the ESC */
-    dummy = SPI.transfer(tmp.Byte[1]); 
-    /* send the second address/command byte to the ESC */
-    dummy = SPI.transfer(tmp.Byte[0]);  
-    /* if the SPI transmission rate is higher than 15 MBaud, the Busy detection shall be
-       done here */
-}
-
-/** @} */
 
 /*--------------------------------------------------------------------------------------
 ------
