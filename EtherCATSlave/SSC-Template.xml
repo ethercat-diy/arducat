@@ -921,7 +921,7 @@
 				</Dc>
 				<Eeprom>
 					<ByteSize>2048</ByteSize>
-					<ConfigData>050E03440A0000000000</ConfigData>
+					<ConfigData>800E03440A0000000000</ConfigData>
 				</Eeprom>
 				<ImageData16x14>424de6000000000000007600000028000000100000000e000000010004000000000070000000000000000000000000000000000000000000000000008000008000000080800080000000800080008080000080808000c0c0c0000000ff0000ff000000ffff00ff000000ff00ff00ffff0000ffffff00ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddeeedddeeeddddddedddededddeddddedddddedddddedddedddddedddddeddddedddededddeddddddeeedddeeeddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd</ImageData16x14>
 			</Device>

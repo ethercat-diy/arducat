@@ -87,8 +87,6 @@ void Ethercat::COE_Init(void)
 UINT8 Ethercat::COE_ServiceInd(TCOEMBX MBXMEM *pCoeMbx)
 {
     UINT8 result = 0;
-	Serial.print("CoeHeader=");
-	Serial.println(pCoeMbx->CoeHeader,HEX);
 	
     switch ((pCoeMbx->CoeHeader & COEHEADER_COESERVICEMASK) >> COEHEADER_COESERVICESHIFT)
     {
@@ -97,14 +95,12 @@ UINT8 Ethercat::COE_ServiceInd(TCOEMBX MBXMEM *pCoeMbx)
            if an existing SDO-Stack shall be used, the corresponding function
             should be called */
         result = SDOS_SdoInd( (TINITSDOMBX MBXMEM *) pCoeMbx );
-		Serial.println("SDOREQUEST");
         break;
 
     case COESERVICE_SDOINFO:
         /* SDO-Information Request received, call SDOS_SdoInfoInd to process the SDO-Request */
         result = SDOS_SdoInfoInd( (TSDOINFORMATION MBXMEM *) pCoeMbx );
         /*NOERROR_INWORK is never returned by SDOS_SdoInfoInd() => delete return code handling*/
-		Serial.println("SDOINFO");
         break;
 
     case COESERVICE_EMERGENCY:

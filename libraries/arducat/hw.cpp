@@ -180,7 +180,8 @@ UINT32 SPIReadDWord (UINT16 Address)
     *((UINT8*)&Val+3) = SPI.transfer(0xFF);
     //De-Assert CS line
     DESELECT_SPI;
-   
+
+	
     return Val;
 }
 
@@ -258,9 +259,7 @@ void SPIWriteRegister( UINT8 *WriteBuffer, UINT16 Address, UINT8 Count)
     do
     {
 	param32_1 = SPIReadDWord (0x304);
-
     }while(*((UINT8*)&param32_1+3) & ESC_CSR_BUSY);
-
     return;
 }
 
@@ -320,7 +319,25 @@ UINT8 Ethercat::HW_Init(void)
 	SPI.setDataMode(SPI_MODE3);	//CPOL=CPHA=1
 	//Initialize with a rising edge
 	PORTH |= (1<<2);
-	
+
+	data = 0;
+	while(data!=0x87654321)
+	{
+		data = SPIReadDWord (0x64);
+		delay(1);
+	}
+	Serial.print("ByteOrder Passed:");
+	Serial.println(data,HEX);
+	Serial.flush();
+	data = 0;
+	while(!(data&0x08000000))
+	{
+		data = SPIReadDWord (0x74);
+		delay(1);
+	}
+	Serial.print("Device Ready:");
+	Serial.println(data,HEX);
+	Serial.flush();
     do
     {
         intMask = 0x93;
@@ -328,6 +345,8 @@ UINT8 Ethercat::HW_Init(void)
         intMask = 0;
         HW_EscReadWord(intMask, ESC_AL_EVENTMASK_OFFSET);
     } while (intMask != 0x93);
+	Serial.println("AL_EVENTMASK_OFFSET_Written.");
+	Serial.flush();
 
     INIT_ESC_INT
     HW_ResetALEventMask(0);
@@ -541,6 +560,7 @@ void Ethercat::HW_EscWrite( MEM_ADDR *pData, UINT16 Address, UINT16 Len )
     UINT16 i;
     UINT8 *pTmpData = (UINT8 *)pData;
 
+
     /* loop for all bytes to be written */
     while ( Len )
     {
@@ -559,9 +579,8 @@ void Ethercat::HW_EscWrite( MEM_ADDR *pData, UINT16 Address, UINT16 Len )
         {
             i=1;
         }
-
+        //DISABLE_AL_EVENT_INT;
         DISABLE_AL_EVENT_INT;
-       
         /* start transmission */
         SPIWriteRegister(pTmpData, Address, i);
 
