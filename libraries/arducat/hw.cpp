@@ -159,6 +159,110 @@ SYNC = PE7(INT7)
 --------------------------------------------------------------------------------------*/
 void SIRQ_IRQHandler();
 void SYNC_IRQHandler();
+
+#define CMD_SERIAL_WRITE 0x02
+#define CMD_SERIAL_READ 0x03
+
+UINT32 SPIReadDWord (UINT16 Address)
+{
+	UINT32 Val;
+    //Assert CS line
+    SELECT_SPI;
+    //Write Command
+    SPI.transfer(CMD_SERIAL_READ);
+    //Write Address
+    SPI.transfer(*((UINT8*)&Address+1));
+    SPI.transfer(*((UINT8*)&Address+0));
+    //Read Bytes
+    *((UINT8*)&Val+0) = SPI.transfer(0xFF);
+    *((UINT8*)&Val+1) = SPI.transfer(0xFF);
+    *((UINT8*)&Val+2) = SPI.transfer(0xFF);
+    *((UINT8*)&Val+3) = SPI.transfer(0xFF);
+    //De-Assert CS line
+    DESELECT_SPI;
+
+	
+    return Val;
+}
+
+void SPIWriteDWord (UINT16 Address, UINT32 Val)
+{
+    //Assert CS line
+    SELECT_SPI;
+    //Write Command
+    SPI.transfer(CMD_SERIAL_WRITE);
+    //Write Address
+    SPI.transfer(*((UINT8*)&Address+1));
+    SPI.transfer(*((UINT8*)&Address+0));
+    //Write Bytes
+    SPI.transfer(*((UINT8*)&Val+0));
+    SPI.transfer(*((UINT8*)&Val+1));
+    SPI.transfer(*((UINT8*)&Val+2));
+    SPI.transfer(*((UINT8*)&Val+3));
+
+    //De-Assert CS line
+    DESELECT_SPI;
+}
+
+#define ESC_CSR_CMD_REG		0x304
+#define ESC_CSR_DATA_REG	0x300
+#define ESC_WRITE_BYTE 		0x80
+#define ESC_READ_BYTE 		0xC0
+#define ESC_CSR_BUSY		0x80
+void SPIReadDRegister(UINT8 *ReadBuffer, UINT16 Address, UINT8 Count)
+{
+    UINT32 param32_1 = 0;
+    UINT8 i = 0;
+    UINT16 wAddr = Address;
+
+    *((UINT8*)&param32_1+0) = *((UINT8*)&wAddr+0);
+    *((UINT8*)&param32_1+1) = *((UINT8*)&wAddr+1);
+    *((UINT8*)&param32_1+2) = Count;
+    *((UINT8*)&param32_1+3) = ESC_READ_BYTE;
+
+    SPIWriteDWord (ESC_CSR_CMD_REG, param32_1);
+
+    do
+    {
+	param32_1 = SPIReadDWord (ESC_CSR_CMD_REG);
+		
+    }while(*((UINT8*)&param32_1+3) & ESC_CSR_BUSY);
+
+    param32_1 = SPIReadDWord (ESC_CSR_DATA_REG);
+
+    
+    for(i=0;i<Count;i++)
+         ReadBuffer[i] = *((UINT8*)&param32_1+i);
+   
+    return;
+}
+void SPIWriteRegister( UINT8 *WriteBuffer, UINT16 Address, UINT8 Count)
+{
+    UINT32 param32_1 = 0;
+    UINT8 i = 0;
+    UINT16 wAddr;
+
+    for(i=0;i<Count;i++)
+         *((UINT8*)&param32_1+i) = WriteBuffer[i];
+
+    SPIWriteDWord (ESC_CSR_DATA_REG, param32_1);
+
+
+    wAddr = Address;
+
+    *((UINT8*)&param32_1+0) = *((UINT8*)&wAddr+0);
+    *((UINT8*)&param32_1+1) = *((UINT8*)&wAddr+1);
+    *((UINT8*)&param32_1+2) = Count;
+    *((UINT8*)&param32_1+3) = ESC_WRITE_BYTE;
+
+    SPIWriteDWord (0x304, param32_1);
+    do
+    {
+	param32_1 = SPIReadDWord (0x304);
+    }while(*((UINT8*)&param32_1+3) & ESC_CSR_BUSY);
+    return;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////
 /**
  \brief  The function operates a SPI access without addressing.
@@ -168,31 +272,9 @@ void SYNC_IRQHandler();
 *////////////////////////////////////////////////////////////////////////////////////////
 void Ethercat::GetInterruptRegister(void)
 {
-    UINT8            EscMbxReadEcatCtrl;
-    DISABLE_AL_EVENT_INT;
-    /* select the SPI */
-    SELECT_SPI;
-
-    /* there have to be at least 15 ns after the SPI1_SEL signal was active (0) before
-       the transmission shall be started */
-    /* write to SPI1_BUF register starts the SPI access*/
-	EscALEvent.Byte[0] = SPI.transfer((UINT8) (0x0000 >> 5));
-    //SPI1_BUF = (UINT8) (0x0000 >> 5);
-
-    /* write to SPI1_BUF register starts the SPI access
-       read the sm mailbox read ecatenable byte */
-	EscALEvent.Byte[1] = SPI.transfer((UINT8) (((0x0000 & 0x1F) << 3) | ESC_RD));
- 
-    /* write to SPI1_BUF register starts the SPI access
-       read the sm mailbox read ecatenable byte (last byte) */
-	EscMbxReadEcatCtrl = SPI.transfer(0xFF);
-
-    /* there has to be at least 15 ns + CLK/2 after the transmission is finished
-       before the SPI1_SEL signal shall be 1 */
-
-    DESELECT_SPI;
-
-    ENABLE_AL_EVENT_INT;
+      DISABLE_AL_EVENT_INT;
+      HW_EscReadIsr(&EscALEvent.Word, 0x220, 2);
+      ENABLE_AL_EVENT_INT;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -205,85 +287,10 @@ void Ethercat::GetInterruptRegister(void)
 *////////////////////////////////////////////////////////////////////////////////////////
 void Ethercat::ISR_GetInterruptRegister(void)
 {
-    /* SPI should be deactivated to interrupt a possible transmission */
-    DESELECT_SPI;
-
-    /* select the SPI */
-    SELECT_SPI;
-    /* there have to be at least 15 ns after the SPI1_SEL signal was active (0) before
-       the transmission shall be started */
-    /* write to SPI1_BUF register starts the SPI access,
-       read the sm mailbox read ecatenable byte
-       (has to be synchronous to the al event flags) */
-    EscALEvent.Byte[0] = SPI.transfer(0);
-    /* get first byte of AL Event register */
-    //EscALEvent.Byte[0] = SPI1_BUF;
-    /* write to SPI1_BUF register starts the SPI access
-       send NOP command */
-    EscALEvent.Byte[1] = SPI.transfer(0);
-
-    /* if the SPI transmission rate is higher than 15 MBaud, the Busy detection shall be
-       done here */
-
-    DESELECT_SPI;
+     HW_EscReadIsr(&EscALEvent.Word, 0x220, 2);
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////////
-/**
- \param Address     EtherCAT ASIC address ( upper limit is 0x1FFF )    for access.
- \param Command    ESC_WR performs a write access; ESC_RD performs a read access.
-
- \brief The function addresses the EtherCAT ASIC via SPI for a following SPI access.
-*////////////////////////////////////////////////////////////////////////////////////////
-void Ethercat::AddressingEsc( UINT16 Address, UINT8 Command )
-{
-    UBYTETOWORD tmp;
-    VARVOLATILE UINT8 dummy;
-    tmp.Word = ( Address << 3 ) | Command;
-    /* select the SPI */
-    SELECT_SPI;
-
-    /* reset transmission flag */
-    /* there have to be at least 15 ns after the SPI1_SEL signal was active (0) before
-       the transmission shall be started */
-    /* send the first address/command byte to the ESC */
-    EscALEvent.Byte[0] = SPI.transfer(tmp.Byte[1]);    
-    /* send the second address/command byte to the ESC */
-    EscALEvent.Byte[1] = SPI.transfer(tmp.Byte[0]); 
-
-    /* if the SPI transmission rate is higher than 15 MBaud, the Busy detection shall be
-       done here */
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-/**
- \param Address     EtherCAT ASIC address ( upper limit is 0x1FFF )    for access.
- \param Command    ESC_WR performs a write access; ESC_RD performs a read access.
-
- \brief The function addresses the EtherCAT ASIC via SPI for a following SPI access.
-        Shall be implemented if interrupts are supported else this function is equal to "AddressingEsc()"
-*////////////////////////////////////////////////////////////////////////////////////////
-void Ethercat::ISR_AddressingEsc( UINT16 Address, UINT8 Command )
-{
-    VARVOLATILE UINT8 dummy;
-    UBYTETOWORD tmp;
-    tmp.Word = ( Address << 3 ) | Command;
-
-    /* select the SPI */
-    SELECT_SPI;
-
-    /* there have to be at least 15 ns after the SPI1_SEL signal was active (0) before
-       the transmission shall be started */
-    /* send the first address/command byte to the ESC */
-    dummy = SPI.transfer(tmp.Byte[1]); 
-    /* send the second address/command byte to the ESC */
-    dummy = SPI.transfer(tmp.Byte[0]);  
-    /* if the SPI transmission rate is higher than 15 MBaud, the Busy detection shall be
-       done here */
-}
-
-/** @} */
 
 /*--------------------------------------------------------------------------------------
 ------
@@ -300,16 +307,37 @@ void Ethercat::ISR_AddressingEsc( UINT16 Address, UINT8 Command )
 UINT8 Ethercat::HW_Init(void)
 {
     UINT16 intMask;
-
+	UINT32 data;
+	//Initial SSEL pin 
+	PORTH &= ~(1<<2);
+	DDRH |= (1<<2);
+	//Initial SPI
 	SPI.begin();
       /* initialize the SPI registers for the ESC SPI */
 	SPI.setClockDivider(SPI_CLOCK_DIV8);
 	SPI.setBitOrder(MSBFIRST); 
 	SPI.setDataMode(SPI_MODE3);	//CPOL=CPHA=1
-	//Initial SSEL pin 
+	//Initialize with a rising edge
 	PORTH |= (1<<2);
-	DDRH |= (1<<2);
-	
+
+	data = 0;
+	while(data!=0x87654321)
+	{
+		data = SPIReadDWord (0x64);
+		delay(1);
+	}
+	Serial.print("ByteOrder Passed:");
+	Serial.println(data,HEX);
+	Serial.flush();
+	data = 0;
+	while(!(data&0x08000000))
+	{
+		data = SPIReadDWord (0x74);
+		delay(1);
+	}
+	Serial.print("Device Ready:");
+	Serial.println(data,HEX);
+	Serial.flush();
     do
     {
         intMask = 0x93;
@@ -317,10 +345,22 @@ UINT8 Ethercat::HW_Init(void)
         intMask = 0;
         HW_EscReadWord(intMask, ESC_AL_EVENTMASK_OFFSET);
     } while (intMask != 0x93);
+	Serial.println("AL_EVENTMASK_OFFSET_Written.");
+	Serial.flush();
 
     INIT_ESC_INT
     HW_ResetALEventMask(0);
     ENABLE_ESC_INT();
+
+    //IRQ enable,IRQ polarity, IRQ buffer type in Interrupt Configuration register.
+    //Wrte 0x54 - 0x00000111
+    data = 0x00000101;
+    SPIWriteDWord (0x54, data);
+    //Write in Interrupt Enable register -->
+    //Write 0x5c - 0x00000001
+    data = 0x00000001;
+    SPIWriteDWord (0x5C, data);
+    SPIReadDWord(0x58);
 
     INIT_SYNC0_INT
     ENABLE_SYNC0_INT;
@@ -430,38 +470,37 @@ void Ethercat::HW_SetLed(UINT8 RunLed,UINT8 ErrLed)
 *////////////////////////////////////////////////////////////////////////////////////////
 void Ethercat::HW_EscRead( MEM_ADDR *pData, UINT16 Address, UINT16 Len )
 {
-    /* HBu 24.01.06: if the SPI will be read by an interrupt routine too the
-                     mailbox reading may be interrupted but an interrupted
-                     reading will remain in a SPI transmission fault that will
-                     reset the internal Sync Manager status. Therefore the reading
-                     will be divided in 1-byte reads with disabled interrupt */
-    UINT16 i = Len;
+    UINT16 i;
     UINT8 *pTmpData = (UINT8 *)pData;
 
     /* loop for all bytes to be read */
-    while ( i-- > 0 )
+    while ( Len > 0 )
     {
-        /* the reading of data from the ESC can be interrupted by the
-           AL Event ISR, in that case the address has to be reinitialized,
-           in that case the status flag will indicate an error because
-           the reading operation was interrupted without setting the last
-           sent byte to 0xFF */
-        DISABLE_AL_EVENT_INT;
-         AddressingEsc( Address, ESC_RD );
 
-        /* when reading the last byte the DI pin shall be 1 */
-		*pTmpData++ = SPI.transfer(0xFF); 
-        /* enable the ESC interrupt to get the AL Event ISR the chance to interrupt,
-           if the next byte is the last the transmission shall not be interrupted,
-           otherwise a sync manager could unlock the buffer, because the last was
-           read internally */
+        i= (Len > 4) ? 4 : Len;
+
+        if(Address & 01)
+        {
+           i=1;
+        }
+        else if (Address & 02)
+        {
+           i= (i&1) ? 1:2;
+        }
+        else if (i == 03)
+        {
+            i=1;
+        }
+
+        DISABLE_AL_EVENT_INT;
+
+       SPIReadDRegister(pTmpData,Address,i);
+      
         ENABLE_AL_EVENT_INT;
-        /* there has to be at least 15 ns + CLK/2 after the transmission is finished
-           before the SPI1_SEL signal shall be 1 */
-        DESELECT_SPI;
-        /* next address */
-        Address++;
-        /* reset transmission flag */
+
+        Len -= i;
+        pTmpData += i;
+        Address += i;
     }
 }
 
@@ -476,29 +515,36 @@ void Ethercat::HW_EscRead( MEM_ADDR *pData, UINT16 Address, UINT16 Len )
 *////////////////////////////////////////////////////////////////////////////////////////
 void Ethercat::HW_EscReadIsr( MEM_ADDR *pData, UINT16 Address, UINT16 Len )
 {
-    UINT16 i = Len;
-    UINT8 data = 0;
-
+   UINT16 i;
    UINT8 *pTmpData = (UINT8 *)pData;
 
     /* send the address and command to the ESC */
-     ISR_AddressingEsc( Address, ESC_RD );
+
     /* loop for all bytes to be read */
-    while ( i-- > 0 )
-    {
-        if ( i == 0 )
+   while ( Len > 0 )
+   {
+
+        i= (Len>4) ? 4:Len;
+
+        if(Address & 01)
         {
-            /* when reading the last byte the DI pin shall be 1 */
-            data = 0xFF;
+           i=1;
+        }
+        else if (Address & 02)
+        {
+           i= (i&1) ? 1:2;
+        }
+        else if (i == 03)
+        {
+            i=1;
         }
 
-        /* start transmission */
-		*pTmpData++ = SPI.transfer(data); 
-    }
+        SPIReadDRegister(pTmpData, Address,i);
 
-    /* there has to be at least 15 ns + CLK/2 after the transmission is finished
-       before the SPI1_SEL signal shall be 1 */
-    DESELECT_SPI;
+        Len -= i;
+        pTmpData += i;
+        Address += i;
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -511,28 +557,39 @@ void Ethercat::HW_EscReadIsr( MEM_ADDR *pData, UINT16 Address, UINT16 Len )
 *////////////////////////////////////////////////////////////////////////////////////////
 void Ethercat::HW_EscWrite( MEM_ADDR *pData, UINT16 Address, UINT16 Len )
 {
-    UINT16 i = Len;
-    VARVOLATILE UINT8 dummy;
-
+    UINT16 i;
     UINT8 *pTmpData = (UINT8 *)pData;
 
-    /* loop for all bytes to be written */
-    while ( i-- > 0 )
-    {
-        /* the reading of data from the ESC can be interrupted by the
-           AL Event ISR, so every byte will be written separate */
-        DISABLE_AL_EVENT_INT;
-        /* HBu 24.01.06: wrong parameter ESC_RD */
-         AddressingEsc( Address, ESC_WR );
-        /* start transmission */
-        dummy = SPI.transfer(*pTmpData++); 
-        ENABLE_AL_EVENT_INT;
-        /* there has to be at least 15 ns + CLK/2 after the transmission is finished
-           before the SPI1_SEL signal shall be 1 */
 
-        DESELECT_SPI;
+    /* loop for all bytes to be written */
+    while ( Len )
+    {
+
+        i= (Len>4) ? 4:Len;
+
+        if(Address & 01)
+        {
+           i=1;
+        }
+        else if (Address & 02)
+        {
+           i= (i&1) ? 1:2;
+        }
+        else if (i == 03)
+        {
+            i=1;
+        }
+        //DISABLE_AL_EVENT_INT;
+        DISABLE_AL_EVENT_INT;
+        /* start transmission */
+        SPIWriteRegister(pTmpData, Address, i);
+
+        ENABLE_AL_EVENT_INT;
+   
         /* next address */
-        Address++;
+        Len -= i;
+        pTmpData += i;
+        Address += i;
 
     }
 }
@@ -548,24 +605,37 @@ void Ethercat::HW_EscWrite( MEM_ADDR *pData, UINT16 Address, UINT16 Len )
 *////////////////////////////////////////////////////////////////////////////////////////
 void Ethercat::HW_EscWriteIsr( MEM_ADDR *pData, UINT16 Address, UINT16 Len )
 {
-    UINT16 i = Len;
-    VARVOLATILE UINT16 dummy;
+    UINT16 i ;
     UINT8 *pTmpData = (UINT8 *)pData;
 
-    /* send the address and command to the ESC */
-     ISR_AddressingEsc( Address, ESC_WR );
+  
     /* loop for all bytes to be written */
-    while ( i-- > 0 )
+    while ( Len )
     {
-        /* start transmission */
-        dummy = SPI.transfer(*pTmpData);
 
-        pTmpData++;
+        i= (Len > 4) ? 4 : Len;
+
+        if(Address & 01)
+        {
+           i=1;
+        }
+        else if (Address & 02)
+        {
+           i= (i&1) ? 1:2;
+        }
+        else if (i == 03)
+        {
+            i=1;
+        }
+        
+       /* start transmission */
+       SPIWriteRegister(pTmpData, Address, i);
+       
+       /* next address */
+        Len -= i;
+        pTmpData += i;
+        Address += i;
     }
-
-    /* there has to be at least 15 ns + CLK/2 after the transmission is finished
-       before the SPI1_SEL signal shall be 1 */
-    DESELECT_SPI;
 }
 
 

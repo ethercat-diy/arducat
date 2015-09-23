@@ -6,3 +6,4 @@
 !libraries/arduinocat/
 !EtherCATSlave/
 !EtherCATSlave/SSC-Template.xml
+!EtherCATSlave/EtherCATSlave.ino
