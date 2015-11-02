@@ -350,7 +350,6 @@ UINT8 Ethercat::HW_Init(void)
 
     INIT_ESC_INT
     HW_ResetALEventMask(0);
-    ENABLE_ESC_INT();
 
     //IRQ enable,IRQ polarity, IRQ buffer type in Interrupt Configuration register.
     //Wrte 0x54 - 0x00000111
@@ -363,7 +362,7 @@ UINT8 Ethercat::HW_Init(void)
     SPIReadDWord(0x58);
 
     INIT_SYNC0_INT
-    ENABLE_SYNC0_INT;
+//    ENABLE_SYNC0_INT;
 
     INIT_ECAT_TIMER;
     START_ECAT_TIMER;

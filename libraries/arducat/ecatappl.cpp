@@ -506,9 +506,9 @@ void Ethercat::MainLoop(void)
                 }
             }
 
-            DISABLE_ESC_INT();
+            noInterrupts();
             ECAT_Application();
-            ENABLE_ESC_INT();
+            interrupts();
         }
 
         /* there is no interrupt routine for the hardware timer so check the timer register if the desired cycle elapsed*/

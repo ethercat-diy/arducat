@@ -14,7 +14,6 @@
 
 //==========================HWDIFINES====================================
 #define ECAT_TIMER_INC_P_MS                1000    //1000 micros/ms
-#define ECAT_INTERRUPT_NO					0
 
 /*--------------------------------------------------------------------------------------
 ------
@@ -201,10 +200,6 @@ private:
 	//====================HARDWARE_H===================================
 #define ESC_RD                    0x02            ///< read access to ESC
 #define ESC_WR                    0x04            ///< write access to ESC	
-	void inline DISABLE_ESC_INT()
-	{	detachInterrupt(ECAT_INTERRUPT_NO);	}
-	void inline ENABLE_ESC_INT()
-	{	attachInterrupt(ECAT_INTERRUPT_NO,0,FALLING);	}
 	unsigned long lastTime;
 	unsigned long inline HW_GetTimer()
 	{	return micros()-lastTime;	}	//auto overflow
