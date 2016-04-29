@@ -113,7 +113,7 @@ SYNC = PE7(INT7)
 ------
 -----------------------------------------------------------------------------------------*/
 
-#define	   INIT_ESC_INT		attachInterrupt(6,SIRQ_IRQHandler,FALLING );
+#define	   INIT_ESC_INT		attachInterrupt(6,SIRQ_IRQHandler,LOW );
 
 
 
@@ -125,7 +125,7 @@ SYNC = PE7(INT7)
 
 #define	   INIT_SYNC0_INT		//{(LPC_GPIO1->IE)|=(1<<9);(LPC_GPIO1->IS)|=(1<<9);(LPC_GPIO1->IEV)&=~(1<<9);NVIC_EnableIRQ(EINT1_IRQn);}
 #define    DISABLE_SYNC0_INT    detachInterrupt(7);//            {(LPC_GPIO1->IE)&=~(1<<9);}//disable interrupt source INT3
-#define    ENABLE_SYNC0_INT     attachInterrupt(7,SYNC_IRQHandler,FALLING );//           {(LPC_GPIO1->IE)|=(1<<9);} //enable interrupt source INT3
+#define    ENABLE_SYNC0_INT     attachInterrupt(7,SYNC_IRQHandler,LOW );//           {(LPC_GPIO1->IE)|=(1<<9);} //enable interrupt source INT3
 
 /*-----------------------------------------------------------------------------------------
 ------
