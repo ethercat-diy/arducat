@@ -38,7 +38,7 @@ def GeneratePdoMappingString(listSlaveInfo,rxtx,strEntryPrefix,strPdoObjPrefix):
         strPdoMapping = strPdoMapping+strRemark+strVarDecl+'\n'+strEntryDesc+'\n'+strObjName+'\n'
         #Generate AppObjDic of PDO mapping
         strAppObjDic = strAppObjDic+"\t{NULL,NULL,"+itemPdoMapping[0] 
-        strAppObjDic = strAppObjDic+",{DEFTYPE_PDOMAPPING, 1 | (OBJCODE_REC << 8)}, asEntryDesc"
+        strAppObjDic = strAppObjDic+",{DEFTYPE_PDOMAPPING, 1 | (OBJCODE_ARR << 8)}, asEntryDesc"
         strAppObjDic = strAppObjDic+itemPdoMapping[0]+', aName'+itemPdoMapping[0]+', &Obj'+itemPdoMapping[0]
         strAppObjDic = strAppObjDic+', NULL, NULL, 0x0000 },\n'
     #Generate PDO Assignment
